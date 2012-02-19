@@ -1,0 +1,5 @@
+content   gmailbuttons                 chrome/content/
+skin      gmailbuttons   classic/1.0   chrome/skin/
+locale    gmailbuttons   en-US         chrome/locale/en-US/
+overlay	chrome://messenger/content/messenger.xul	chrome://gmailbuttons/content/tb-overlay.xul
+style	chrome://global/content/customizeToolbar.xul	chrome://gmailbuttons/skin/overlay.css

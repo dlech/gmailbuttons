@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://gmailbuttons/skin/overlay.css" type="text/css"?>
+<!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/overlay.dtd">
+<overlay id="gmailbuttons-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script src="tb-overlay.js"/>
+  <stringbundleset id="stringbundleset">
+    <stringbundle id="gmailbuttons-strings" src="chrome://gmailbuttons/locale/overlay.properties"/>
+  </stringbundleset>  
+  <toolbar id="header-view-toolbar">
+    <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;" 
+      tooltiptext="&gmailbuttonsSpamButton.tooltip;" 
+	  class="toolbarbutton-1 msgHeaderView-button hdrJunkButton" 
+	  removable="true"/>
+    <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;" 
+      tooltiptext="&gmailbuttonsTrashButton.tooltip;" 
+	  class="toolbarbutton-1 msgHeaderView-button gmailbuttons-msgHdr-trash-button" 
+	  removable="true"/>
+	</toolbar>
+</overlay>

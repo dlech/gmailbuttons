@@ -1,0 +1,4 @@
+<!ENTITY gmailbuttonsTrashButton.label "Trash">
+<!ENTITY gmailbuttonsTrashButton.tooltip "Move this message to the [Gmail]/Trash folder">
+<!ENTITY gmailbuttonsSpamButton.label "Spam">
+<!ENTITY gmailbuttonsSpamButton.tooltip "Move this message to the [Gmail]/Spam folder">
