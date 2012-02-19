@@ -10,10 +10,12 @@
     <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;" 
       tooltiptext="&gmailbuttonsSpamButton.tooltip;" 
 	  class="toolbarbutton-1 msgHeaderView-button hdrJunkButton" 
+	  oncommand="gmailbuttons.MoveToSpam(event);"
 	  removable="true"/>
     <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;" 
       tooltiptext="&gmailbuttonsTrashButton.tooltip;" 
 	  class="toolbarbutton-1 msgHeaderView-button gmailbuttons-msgHdr-trash-button" 
+	  oncommand="gmailbuttons.MoveToTrash(event);"
 	  removable="true"/>
 	</toolbar>
 </overlay>
