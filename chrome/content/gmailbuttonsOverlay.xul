@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet href="chrome://gmailbuttons/skin/overlay.css" type="text/css"?>
-<!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/overlay.dtd">
+<?xml-stylesheet href="chrome://gmailbuttons/skin/gmailbuttonsOverlay.css" type="text/css"?>
+<!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOverlay.dtd">
 <overlay id="gmailbuttons-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-  <script src="tb-overlay.js"/>
+  <script src="gmailbuttonsOverlay.js"/>
   <stringbundleset id="stringbundleset">
-    <stringbundle id="gmailbuttons-strings" src="chrome://gmailbuttons/locale/overlay.properties"/>
+    <stringbundle id="gmailbuttons-strings" src="chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties"/>
   </stringbundleset>  
   <toolbar id="header-view-toolbar">
     <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;" 

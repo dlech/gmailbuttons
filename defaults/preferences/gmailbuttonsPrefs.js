@@ -4,4 +4,4 @@
 pref("extensions.gmailbuttons.showDeleteButton", false);
 
 // https://developer.mozilla.org/en/Localizing_extension_descriptions
-pref("extensions.gmailbuttons.description", "chrome://gmailbuttons/locale/overlay.properties");
+//pref("extensions.gmailbuttons.description", "chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties");
