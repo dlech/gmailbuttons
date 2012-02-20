@@ -16,6 +16,6 @@
                 <em:maxVersion>13.0a1</em:maxVersion>
             </Description>
         </em:targetApplication>
-        <em:aboutURL>chrome://gmailbuttons/content/about.xul</em:aboutURL>
+        <em:aboutURL>chrome://gmailbuttons/content/gmailbuttonsAbout.xul</em:aboutURL>
     </Description>
 </RDF>
