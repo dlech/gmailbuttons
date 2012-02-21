@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet href="chrome://gmailbuttons/skin/gmailbuttonsOverlay.css" type="text/css"?>
 <!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOverlay.dtd">
 <overlay id="gmailbuttons-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <script src="gmailbuttonsOverlay.js"/>
@@ -14,7 +13,8 @@
 	  removable="true"/>
     <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;" 
       tooltiptext="&gmailbuttonsTrashButton.tooltip;" 
-	  class="toolbarbutton-1 msgHeaderView-button gmailbuttons-msgHdr-trash-button" 
+	  class="toolbarbutton-1 msgHeaderView-button" 
+	  style="list-style-image: url('chrome://gmailbuttons/skin/icons/gmailbuttonsTrash.png')"
 	  oncommand="gmailbuttons.MoveToTrash(event);"
 	  removable="true"/>
 	</toolbar>

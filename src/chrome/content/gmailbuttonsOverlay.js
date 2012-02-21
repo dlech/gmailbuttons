@@ -40,18 +40,28 @@ var gmailbuttons = {
 	var spamButton = document.getElementById("gmailbuttons-spam-button");
 	
 	if (this.IsMessageGmailIMAP()) { // this is a gmail imap account
-	  deleteButton.oldTooltipText = deleteButton.tooltipText;
-	  deleteButton.tooltipText = this.strings.getString("deleteButton.tooltip");
+	  if (deleteButton) {
+	    deleteButton.oldTooltipText = deleteButton.tooltipText;
+	    deleteButton.tooltipText = this.strings.getString("deleteButton.tooltip");
+      }
 	  // TODO hide the delete button based on preference
-	  trashButton.hidden = false;
-	  junkButton.hidden = true;
-	  spamButton.hidden = false;
+	  if (trashButton)
+	    trashButton.hidden = false;
+	  if (junkButton)
+	    junkButton.hidden = true;
+	  if (spamButton)	
+	    spamButton.hidden = false;
 	} else { // this is not a gmail account
-	  if (deleteButton.oldTooltipText)
-	    deleteButton.tooltipText = deleteButton.oldTooltipText;
-	  trashButton.hidden = true; // TODO hide trash button if we are in the [Gmail]/Trash folder
-	  junkButton.hidden = false;
-	  spamButton.hidden = true;
+	  if (deleteButton) {
+	    if (deleteButton.oldTooltipText)
+	      deleteButton.tooltipText = deleteButton.oldTooltipText;
+      }
+	  if (trashButton)
+	    trashButton.hidden = true; // TODO hide trash button if we are in the [Gmail]/Trash folder
+	  if (junkButton)
+	    junkButton.hidden = false;
+	  if (spamButton)
+	    spamButton.hidden = true;
 	}
   },
   
