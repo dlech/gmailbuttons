@@ -3,7 +3,30 @@ var gmailbuttons = {
     // initialization code
     this.initialized = true;
     this.strings = document.getElementById("gmailbuttons-strings");	
+	// add support for preferences
+	this.prefs = Components.classes["@mozilla.org/preferences-service;1"]  
+         .getService(Components.interfaces.nsIPrefService)  
+         .getBranch("extensions.gmailbuttons.");  
+     this.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);  
+	 this.prefs.addObserver("", this, false); 
   },
+  
+  onUnload: function() {
+    // cleanup preferences
+    this.prefs.removeObserver("", this);  
+  },
+  
+  observe: function(subject, topic, data) {  
+    if (topic != "nsPref:changed") {  
+      return; // only need to act on pref change
+    }  
+    // process change	
+    switch(data) {  
+      case "showDeleteButton":  
+         this.updateJunkSpamButtons();
+         break;  
+      }  
+  },  
   
   GetMessageServer: function() {
     // get current message
@@ -41,11 +64,17 @@ var gmailbuttons = {
 	
 	if (this.IsMessageGmailIMAP()) { // this is a gmail imap account
 	  if (deleteButton) {
-	    deleteButton.oldTooltipText = deleteButton.tooltipText;
+	    // save the original tooltip - this only runs once
+	    if (!deleteButton.oldTooltipText)
+	      deleteButton.oldTooltipText = deleteButton.tooltipText;
 	    deleteButton.tooltipText = this.strings.getString("deleteButton.tooltip");
+		try {
+		  showDelete = this.prefs.getBoolPref("showDeleteButton")		
+		  deleteButton.hidden = !showDelete;
+	    } catch(ex) {
+		  // preference does not exist - do nothing
+		}
       }
-	  // TODO hide the delete button based on preference
-	  // ex. gCustomizeSheet = prefSvc.getBoolPref("toolbar.customization.usesheet");
 	  if (trashButton)
 	    trashButton.hidden = false;
 	  if (junkButton)
@@ -56,6 +85,7 @@ var gmailbuttons = {
 	  if (deleteButton) {
 	    if (deleteButton.oldTooltipText)
 	      deleteButton.tooltipText = deleteButton.oldTooltipText;
+		deleteButton.hidden = false;
       }
 	  if (trashButton)
 	    trashButton.hidden = true; // TODO hide trash button if we are in the [Gmail]/Trash folder
@@ -148,6 +178,8 @@ var gmailbuttons = {
 
 // listen for initial window load event
 window.addEventListener("load", function () { gmailbuttons.onLoad(); }, false);
+// listen for window unload event
+window.addEventListener("unload", function () { gmailbuttons.onUnload(); }, false);
 // listen for customization events
 window.addEventListener("beforecustomization", function (e) { gmailbuttons.onBeforeCustomization(e); }, false);
 window.addEventListener("aftercustomization", function (e) { gmailbuttons.onAfterCustomization(e); }, false);
