@@ -45,6 +45,7 @@ var gmailbuttons = {
 	    deleteButton.tooltipText = this.strings.getString("deleteButton.tooltip");
       }
 	  // TODO hide the delete button based on preference
+	  // ex. gCustomizeSheet = prefSvc.getBoolPref("toolbar.customization.usesheet");
 	  if (trashButton)
 	    trashButton.hidden = false;
 	  if (junkButton)
@@ -65,6 +66,26 @@ var gmailbuttons = {
 	}
   },
   
+  // unhides all buttons - used during customization of toolbar
+  showAllButtons: function() {
+	
+	// get message-specific header buttons	
+	var deleteButton = document.getElementById("hdrTrashButton");
+	var trashButton = document.getElementById("gmailbuttons-trash-button");
+	var junkButton = document.getElementById("hdrJunkButton");
+	var spamButton = document.getElementById("gmailbuttons-spam-button");
+		
+	// show all buttons
+	if (deleteButton) 
+      deleteButton.hidden = false;
+	if (trashButton)
+	  trashButton.hidden = false;
+	if (junkButton)
+	  junkButton.hidden = false;
+	if (spamButton)	
+	  spamButton.hidden = false;	
+  },
+    
   // handle message header load events
   messageHandler: {
 	onStartHeaders: function() {
@@ -78,6 +99,16 @@ var gmailbuttons = {
 	onEndAttachments: function() {
 		// do nothing
 	}	
+  },
+  
+  onBeforeCustomization: function(e) { 
+	if (e.target.id == "header-view-toolbox")
+	  gmailbuttons.showAllButtons();
+  },
+  
+  onAfterCustomization: function(e) {   
+	if (e.target.id == "header-view-toolbox")  
+	  gmailbuttons.updateJunkSpamButtons();
   },
 
   // moves the selected message to the [Gmail]/Trash folder
@@ -117,5 +148,8 @@ var gmailbuttons = {
 
 // listen for initial window load event
 window.addEventListener("load", function () { gmailbuttons.onLoad(); }, false);
+// listen for customization events
+window.addEventListener("beforecustomization", function (e) { gmailbuttons.onBeforeCustomization(e); }, false);
+window.addEventListener("aftercustomization", function (e) { gmailbuttons.onAfterCustomization(e); }, false);
 // listen for messages loading
 gMessageListeners.push(gmailbuttons.messageHandler);
