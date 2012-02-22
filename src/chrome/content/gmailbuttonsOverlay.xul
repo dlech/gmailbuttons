@@ -9,13 +9,13 @@
     <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;" 
       tooltiptext="&gmailbuttonsSpamButton.tooltip;" 
 	  class="toolbarbutton-1 msgHeaderView-button hdrJunkButton" 
-	  oncommand="gmailbuttons.MoveToSpam(event);"
+	  oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Junk, event);"
 	  removable="true"/>
     <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;" 
       tooltiptext="&gmailbuttonsTrashButton.tooltip;" 
 	  class="toolbarbutton-1 msgHeaderView-button" 
 	  style="list-style-image: url('chrome://gmailbuttons/skin/icons/gmailbuttonsTrash.png')"
-	  oncommand="gmailbuttons.MoveToTrash(event);"
+	  oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Trash, event);"
 	  removable="true"/>
 	</toolbar>
 </overlay>

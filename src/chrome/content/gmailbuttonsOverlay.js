@@ -141,39 +141,44 @@ var gmailbuttons = {
 	  gmailbuttons.updateJunkSpamButtons();
   },
 
-  // moves the selected message to the [Gmail]/Trash folder
-  MoveToTrash: function(e) {
-    if (this.IsMessageGmailIMAP()) { // mesage is on gmail imap server
-	  var svr = this.GetMessageServer();
-	  var gmailFolder = svr.rootFolder.getChildNamed("[Gmail]");
-	  if (gmailFolder) {
-	    gmailTrashFolder = gmailFolder.getChildNamed("Trash");
-		if (gmailTrashFolder) {
-		  gFolderDisplay.hintAboutToDeleteMessages();
-          gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages, gmailTrashFolder);
-		  //return; // otherwise show error mesage below
-		}
-      }
-	} // trash button should not be visivle if not a gmail imap message
-	// TODO may want error message here
+  // search for folder flagged as a special folder. i.e. Trash and Spam folders
+  getSpecialFolder: function(fldr, flag) {
+    /* TODO would be nice if we could do this directly using XPATH */
+	/* for now, we use recurstion to search folders instead */
+	
+	// make sure we have a folder
+	if (!(fldr instanceof Ci.nsIMsgFolder))
+	  return;
+	// if folder is flagged as trash folder, retun the folder
+    if (fldr.isSpecialFolder(flag))
+		return fldr;
+	// otherwise, search recursivly
+	if (fldr.hasSubFolders) {
+	  var subfldrs = fldr.subFolders;
+	  while (subfldrs.hasMoreElements()) {
+	    var subfldr = subfldrs.getNext();
+	    var result = this.getSpecialFolder(subfldr, flag);
+  	    if (result)
+	  	  return result;
+	  }
+	}
+	// no trash folders were found
+	return;
   },
-
-  // moves the selected message to the [Gmail]/Spam folder
-  MoveToSpam: function(e) {
+  
+  // moves the selected message to a special folder. i.e. [Gmail]/Trash
+  MoveToSpecialFolder: function(flag, e) {
     if (this.IsMessageGmailIMAP()) { // mesage is on gmail imap server
 	  var svr = this.GetMessageServer();
-	  var gmailFolder = svr.rootFolder.getChildNamed("[Gmail]");
-	  if (gmailFolder) {
-	    gmailTrashFolder = gmailFolder.getChildNamed("Spam");
-		if (gmailTrashFolder) {
-		  gFolderDisplay.hintAboutToDeleteMessages();
-          gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages, gmailTrashFolder);
-		  //return; // otherwise show error mesage below
-		}
-      }
-	} // trash button should not be visivle if not a gmail imap message
+	  var specialFolder = this.getSpecialFolder(svr.rootFolder, flag);	  
+      if (specialFolder) {
+		gFolderDisplay.hintAboutToDeleteMessages();
+        gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages, specialFolder);
+		//return; // otherwise show error mesage below
+	  }  
+    } // trash button should not be visivle if not a gmail imap message
 	// TODO may want error message here
-  }    
+  }
 };
 
 // listen for initial window load event
