@@ -28,7 +28,7 @@ var gmailbuttons = {
       }  
   },  
   
-  GetMessageServer: function() {
+  GetMessageFolder: function() {
     // get current message
 	var hdr = gFolderDisplay.selectedMessage;
     // give up if no message selected or this is a dummy header
@@ -36,6 +36,13 @@ var gmailbuttons = {
       return;
 	// get folder that contains message
 	var fldr = hdr.folder;
+	if (!fldr) // message not in folder somehow?
+		return;	
+	return fldr;
+  },  
+  
+  GetMessageServer: function() {
+    var fldr = this.GetMessageFolder();
 	if (!fldr) // message not in folder somehow?
 		return;
 	// get server that hosts folder
@@ -45,13 +52,22 @@ var gmailbuttons = {
 	return svr;
   },
   
-  // returns true if message is in gmail imap
-  IsMessageGmailIMAP: function() {	
-	var gmailHostNames = ["imap.gmail.com", "imap.googlemail.com"]; // TODO - pull these to a config file
-	var svr = this.GetMessageServer();
-	if (svr) 
-	  return gmailHostNames.indexOf(svr.hostName) >= 0;
-	return false;
+  // returns true if message is in Gmail imap
+  IsServerGmailIMAP: function(svr) {
+    // check that svr parameter is valid
+    if (!(svr instanceof Ci.nsIImapIncomingServer))
+	  return;
+	// check to see if it is a Gmail server
+	return (svr.type == "imap" && 
+	    svr.QueryInterface(Ci.nsIImapIncomingServer).isGMailServer);
+  },
+  
+  IsSpecialFolder: function(fldr, flag) {
+    // make sure this is a valid folder
+    if (!(fldr instanceof Ci.nsMessageFolder))
+	  return;
+	// check if folder has special folder flag
+	return fldr.isSpecialFolder(flag);
   },
   
   updateJunkSpamButtons: function() {
@@ -62,14 +78,14 @@ var gmailbuttons = {
 	var junkButton = document.getElementById("hdrJunkButton");
 	var spamButton = document.getElementById("gmailbuttons-spam-button");
 	
-	if (this.IsMessageGmailIMAP()) { // this is a gmail imap account
+	if (this.IsServerGmailIMAP(this.GetMessageServer())) { // this is a Gmail imap account
 	  if (deleteButton) {
 	    // save the original tooltip - this only runs once
 	    if (!deleteButton.oldTooltipText)
 	      deleteButton.oldTooltipText = deleteButton.tooltipText;
 	    deleteButton.tooltipText = this.strings.getString("deleteButton.tooltip");
 		try {
-		  showDelete = this.prefs.getBoolPref("showDeleteButton")		
+		  var showDelete = this.prefs.getBoolPref("showDeleteButton")		
 		  deleteButton.hidden = !showDelete;
 	    } catch(ex) {
 		  // preference does not exist - do nothing
@@ -81,13 +97,14 @@ var gmailbuttons = {
 	    junkButton.hidden = true;
 	  if (spamButton)	
 	    spamButton.hidden = false;
-	} else { // this is not a gmail account
+	} else { // this is not a GMail account
 	  if (deleteButton) {
 	    if (deleteButton.oldTooltipText)
 	      deleteButton.tooltipText = deleteButton.oldTooltipText;
 		deleteButton.hidden = false;
       }
-	  if (trashButton)
+	  if (trashButton)	
+        // if (!IsSpecialFolder(this.getMessageFolder(), Ci.nsMsgFolderFlags.Trash))	  
 	    trashButton.hidden = true; // TODO hide trash button if we are in the [Gmail]/Trash folder
 	  if (junkButton)
 	    junkButton.hidden = false;
@@ -168,15 +185,15 @@ var gmailbuttons = {
   
   // moves the selected message to a special folder. i.e. [Gmail]/Trash
   MoveToSpecialFolder: function(flag, e) {
-    if (this.IsMessageGmailIMAP()) { // mesage is on gmail imap server
-	  var svr = this.GetMessageServer();
+    var svr = this.GetMessageServer();
+    if (this.IsServerGmailIMAP(svr)) { // mesage is on Gmail imap server	  
 	  var specialFolder = this.getSpecialFolder(svr.rootFolder, flag);	  
       if (specialFolder) {
 		gFolderDisplay.hintAboutToDeleteMessages();
         gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages, specialFolder);
 		//return; // otherwise show error mesage below
 	  }  
-    } // trash button should not be visivle if not a gmail imap message
+    } // trash button should not be visivle if not a Gmail imap message
 	// TODO may want error message here
   }
 };
