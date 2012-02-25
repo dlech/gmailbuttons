@@ -72,45 +72,82 @@ var gmailbuttons = {
   
   updateJunkSpamButtons: function() {
 	
-	// get message-specific header buttons	
-	var deleteButton = document.getElementById("hdrTrashButton");
-	var trashButton = document.getElementById("gmailbuttons-trash-button");
-	var junkButton = document.getElementById("hdrJunkButton");
-	var spamButton = document.getElementById("gmailbuttons-spam-button");
-	
-	if (this.IsServerGmailIMAP(this.GetMessageServer())) { // this is a Gmail imap account
-	  if (deleteButton) {
-	    // save the original tooltip - this only runs once
-	    if (!deleteButton.oldTooltipText)
-	      deleteButton.oldTooltipText = deleteButton.tooltipText;
-	    deleteButton.tooltipText = this.strings.getString("deleteButton.tooltip");
-		try {
-		  var showDelete = this.prefs.getBoolPref("showDeleteButton")		
-		  deleteButton.hidden = !showDelete;
-	    } catch(ex) {
-		  // preference does not exist - do nothing
-		}
+    
+    /* get message-specific header buttons*/
+    var deleteButton = document.getElementById("hdrTrashButton");
+    var trashButton = document.getElementById("gmailbuttons-trash-button");
+    var junkButton = document.getElementById("hdrJunkButton");
+    var spamButton = document.getElementById("gmailbuttons-spam-button");
+        
+    if (this.IsServerGmailIMAP(this.GetMessageServer())) { 
+      // this is a Gmail imap account
+    
+      /* get actual folder names from server  */
+      try {
+        var svr = this.GetMessageServer();
+        var svrRootFolder = svr.rootFolder;
+        var trashFolder = this.getSpecialFolder(svrRootFolder, nsMsgFolderFlags.Trash);
+        var spamFolder = this.getSpecialFolder(svrRootFolder, nsMsgFolderFlags.Junk);
+      } catch(ex) {
+        // don't need to do anything here
+        //alert(ex);
       }
-	  if (trashButton)
-	    trashButton.hidden = false;
-	  if (junkButton)
-	    junkButton.hidden = true;
-	  if (spamButton)	
-	    spamButton.hidden = false;
-	} else { // this is not a GMail account
-	  if (deleteButton) {
-	    if (deleteButton.oldTooltipText)
-	      deleteButton.tooltipText = deleteButton.oldTooltipText;
-		deleteButton.hidden = false;
+      // get label text
+      var trashLabel = trashFolder ? trashFolder.prettiestName : 
+          this.strings.getString("gmailbuttons.error");
+      var spamLabel = spamFolder ? spamFolder.prettiestName : 
+          this.strings.getString("gmailbuttons.error");
+      // get tooltip text
+      var trashTooltip = trashFolder ? 
+          this.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+          [trashFolder.URI.replace(svrRootFolder.URI, "").substr(1)], 1) : 
+          this.strings.getString("gmailbuttons.error");
+      var spamTooltip = spamFolder ? 
+          this.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+          [spamFolder.URI.replace(svrRootFolder.URI, "").substr(1)], 1) : 
+          this.strings.getString("gmailbuttons.error");  
+    
+      if (deleteButton) {
+        // save the original tooltip - this only runs once
+        if (!deleteButton.oldTooltipText)
+          deleteButton.oldTooltipText = deleteButton.tooltipText;
+        // apply new tooltip
+        deleteButton.tooltipText = this.strings.getString("gmailbuttons.deleteButton.tooltip");
+      try {
+        var showDelete = this.prefs.getBoolPref("showDeleteButton")		
+        deleteButton.hidden = !showDelete;
+        } catch(ex) {
+        // preference does not exist - do nothing
       }
-	  if (trashButton)	
-        // if (!IsSpecialFolder(this.getMessageFolder(), Ci.nsMsgFolderFlags.Trash))	  
-	    trashButton.hidden = true; // TODO hide trash button if we are in the [Gmail]/Trash folder
-	  if (junkButton)
-	    junkButton.hidden = false;
-	  if (spamButton)
-	    spamButton.hidden = true;
-	}
+        }
+      if (trashButton) {
+        trashButton.hidden = false;
+        trashButton.label = trashLabel;
+        trashButton.tooltipText = trashTooltip;
+      }
+      if (junkButton)
+        junkButton.hidden = true;
+      if (spamButton)	{
+        spamButton.hidden = false;
+        spamButton.label = spamLabel;      
+        spamButton.tooltipText = spamTooltip;
+      }    
+    } else { 
+      // this is not a GMail account
+      
+      if (deleteButton) {
+        if (deleteButton.oldTooltipText)
+          deleteButton.tooltipText = deleteButton.oldTooltipText;
+      deleteButton.hidden = false;
+        }
+      if (trashButton)	
+          // if (!IsSpecialFolder(this.getMessageFolder(), Ci.nsMsgFolderFlags.Trash))	  
+        trashButton.hidden = true; // TODO hide trash button if we are in the [Gmail]/Trash folder
+      if (junkButton)
+        junkButton.hidden = false;
+      if (spamButton)
+        spamButton.hidden = true;
+    }
   },
   
   // unhides all buttons - used during customization of toolbar

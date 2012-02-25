@@ -1,1 +1,2 @@
-<!ENTITY showDeleteButtonPref "Show Delete button for Gmail messages.">
+<!ENTITY gmailbuttons.showDeleteButtonPref "Show Delete button for Gmail messages.">
+<!ENTITY gmailbuttons.hideJunkStatusColPref "Hide &quot;Junk Status&quot; column in message list for Gmail folders.">
