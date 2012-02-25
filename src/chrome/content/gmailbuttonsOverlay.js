@@ -71,7 +71,6 @@ var gmailbuttons = {
   },
   
   updateJunkSpamButtons: function() {
-	
     
     /* get message-specific header buttons*/
     var deleteButton = document.getElementById("hdrTrashButton");
@@ -171,18 +170,43 @@ var gmailbuttons = {
   },
     
   // handle message header load events
-  messageHandler: {
-	onStartHeaders: function() {
-		// do nothing
-	},
-	
-	onEndHeaders: function() {
-		gmailbuttons.updateJunkSpamButtons();
-	},
-	
-	onEndAttachments: function() {
-		// do nothing
-	}	
+  messageListener: {
+    onStartHeaders: function() {
+      // do nothing
+    },
+    
+    onEndHeaders: function() {
+      gmailbuttons.updateJunkSpamButtons();
+    },
+    
+    onEndAttachments: function() {
+      // do nothing
+    }	
+  },
+  
+  folderDisplayListener: {
+     onMessagesLoaded: function(aAll) {
+       try {
+        var hideJunkStatusCol = gmailbuttons.prefs.getBoolPref("hideJunkStatusCol")		
+        // don't need to do anything if pref doesn't exist or is false
+        if(!hideJunkStatusCol)
+         return;
+        // get the server from the selected folder
+        var svr = aAll.displayedFolder.server;
+        if (!svr)
+          return;
+        if (gmailbuttons.IsServerGmailIMAP(svr)) {      
+          // hide junk status column
+          var junkStatusColumn = document.getElementById("junkStatusCol");
+          if (junkStatusColumn) {
+            junkStatusColumn.hidden = true;
+          }
+        }
+      } catch(ex) {
+        // preference does not exist - do nothing
+        //alert(ex);
+      }
+    },  
   },
   
   onBeforeCustomization: function(e) { 
@@ -243,4 +267,6 @@ window.addEventListener("unload", function () { gmailbuttons.onUnload(); }, fals
 window.addEventListener("beforecustomization", function (e) { gmailbuttons.onBeforeCustomization(e); }, false);
 window.addEventListener("aftercustomization", function (e) { gmailbuttons.onAfterCustomization(e); }, false);
 // listen for messages loading
-gMessageListeners.push(gmailbuttons.messageHandler);
+gMessageListeners.push(gmailbuttons.messageListener);
+// listen for folder selection
+FolderDisplayListenerManager.registerListener(gmailbuttons.folderDisplayListener);
