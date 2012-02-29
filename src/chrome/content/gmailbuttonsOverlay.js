@@ -3,12 +3,12 @@ var gmailbuttons = {
     // initialization code
     this.initialized = true;
     this.strings = document.getElementById("gmailbuttons-strings");	
-	// add support for preferences
-	this.prefs = Components.classes["@mozilla.org/preferences-service;1"]  
-         .getService(Components.interfaces.nsIPrefService)  
-         .getBranch("extensions.gmailbuttons.");  
-     this.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);  
-	 this.prefs.addObserver("", this, false); 
+    // add support for preferences
+    this.prefs = Components.classes["@mozilla.org/preferences-service;1"]  
+        .getService(Components.interfaces.nsIPrefService)  
+        .getBranch("extensions.gmailbuttons.");  
+    this.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);  
+    this.prefs.addObserver("", this, false); 
   },
   
   onUnload: function() {
@@ -30,49 +30,48 @@ var gmailbuttons = {
   
   GetMessageFolder: function() {
     // get current message
-	var hdr = gFolderDisplay.selectedMessage;
+    var hdr = gFolderDisplay.selectedMessage;
     // give up if no message selected or this is a dummy header
     if (!hdr || gMessageDisplay.isDummy) 
       return;
-	// get folder that contains message
-	var fldr = hdr.folder;
-	if (!fldr) // message not in folder somehow?
-		return;	
-	return fldr;
+    // get folder that contains message
+    var fldr = hdr.folder;
+    if (!fldr) // message not in folder somehow?
+      return;	
+    return fldr;
   },  
   
   GetMessageServer: function() {
     var fldr = this.GetMessageFolder();
-	if (!fldr) // message not in folder somehow?
-		return;
-	// get server that hosts folder
-	var svr = fldr.server;
-	if (!svr) // folder does not have server?
-		return;
-	return svr;
+    if (!fldr) // message not in folder somehow?
+      return;
+    // get server that hosts folder
+    var svr = fldr.server;
+    if (!svr) // folder does not have server?
+      return;
+    return svr;
   },
   
   // returns true if message is in Gmail imap
   IsServerGmailIMAP: function(svr) {
     // check that svr parameter is valid
     if (!(svr instanceof Ci.nsIImapIncomingServer))
-	  return;
-	// check to see if it is a Gmail server
-	return (svr.type == "imap" && 
-	    svr.QueryInterface(Ci.nsIImapIncomingServer).isGMailServer);
+      return;
+    // check to see if it is imap and Gmail server
+    return (svr.type == "imap" && svr.isGMailServer);
   },
   
   IsSpecialFolder: function(fldr, flag) {
     // make sure this is a valid folder
     if (!(fldr instanceof Ci.nsMessageFolder))
 	  return;
-	// check if folder has special folder flag
-	return fldr.isSpecialFolder(flag);
+    // check if folder has special folder flag
+    return fldr.isSpecialFolder(flag);
   },
   
   updateJunkSpamButtons: function() {
     
-    /* get message-specific header buttons*/
+    /* get message-specific header buttons */
     var deleteButton = document.getElementById("hdrTrashButton");
     var trashButton = document.getElementById("gmailbuttons-trash-button");
     var junkButton = document.getElementById("hdrJunkButton");
@@ -210,51 +209,54 @@ var gmailbuttons = {
   },
   
   onBeforeCustomization: function(e) { 
-	if (e.target.id == "header-view-toolbox")
-	  gmailbuttons.showAllButtons();
+    if (e.target.id == "header-view-toolbox")
+      gmailbuttons.showAllButtons();
   },
   
   onAfterCustomization: function(e) {   
-	if (e.target.id == "header-view-toolbox")  
-	  gmailbuttons.updateJunkSpamButtons();
+    if (e.target.id == "header-view-toolbox")  
+      gmailbuttons.updateJunkSpamButtons();
   },
 
   // search for folder flagged as a special folder. i.e. Trash and Spam folders
   getSpecialFolder: function(fldr, flag) {
     /* TODO would be nice if we could do this directly using XPATH */
-	/* for now, we use recurstion to search folders instead */
+    
+    
+    
+    /* for now, we use recurstion to search folders instead */
 	
-	// make sure we have a folder
-	if (!(fldr instanceof Ci.nsIMsgFolder))
-	  return;
-	// if folder is flagged as trash folder, retun the folder
+    // make sure we have a folder
+    if (!(fldr instanceof Ci.nsIMsgFolder))
+      return;
+    // if folder is flagged as trash folder, retun the folder
     if (fldr.isSpecialFolder(flag))
-		return fldr;
-	// otherwise, search recursivly
-	if (fldr.hasSubFolders) {
-	  var subfldrs = fldr.subFolders;
-	  while (subfldrs.hasMoreElements()) {
-	    var subfldr = subfldrs.getNext();
-	    var result = this.getSpecialFolder(subfldr, flag);
-  	    if (result)
-	  	  return result;
-	  }
-	}
-	// no trash folders were found
-	return;
+      return fldr;
+    // otherwise, search recursivly
+    if (fldr.hasSubFolders) {
+      var subfldrs = fldr.subFolders;
+      while (subfldrs.hasMoreElements()) {
+        var subfldr = subfldrs.getNext();
+        var result = this.getSpecialFolder(subfldr, flag);
+          if (result)
+            return result;
+      }
+    }
+    // no trash folders were found
+    return;
   },
   
   // moves the selected message to a special folder. i.e. [Gmail]/Trash
   MoveToSpecialFolder: function(flag, e) {
     var svr = this.GetMessageServer();
     if (this.IsServerGmailIMAP(svr)) { // mesage is on Gmail imap server	  
-	  var specialFolder = this.getSpecialFolder(svr.rootFolder, flag);	  
-      if (specialFolder) {
-		gFolderDisplay.hintAboutToDeleteMessages();
-        gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages, specialFolder);
-		//return; // otherwise show error mesage below
-	  }  
-    } // trash button should not be visivle if not a Gmail imap message
+      var specialFolder = this.getSpecialFolder(svr.rootFolder, flag);	  
+        if (specialFolder) {
+      gFolderDisplay.hintAboutToDeleteMessages();
+          gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages, specialFolder);
+      //return; // otherwise show error mesage below
+      }  
+    } // trash button should not be visible if not a Gmail imap message
 	// TODO may want error message here
   }
 };
