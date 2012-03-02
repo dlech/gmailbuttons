@@ -58,7 +58,10 @@ var gmailbuttons = {
     if (!(aServer instanceof Ci.nsIImapIncomingServer))
       return;
     // check to see if it is imap and Gmail server
-    return (aServer.type == "imap" && aServer.isGMailServer);
+    alert("Type: " + aServer.type + "\nisGmail: " + aServer.isGMailServer +
+        "\nName: " + aServer.hostName);
+    var gmailHostNames = ["imap.gmail.com", "imap.googlemail.com"]; // TODO - pull these to a config file	
+    return (aServer.type == "imap" && aServer.isGMailServer) || (gmailHostNames.indexOf(aServer.hostName) >= 0);
   },
   
   IsSpecialFolder: function(aFolder, aFlag) {
@@ -79,7 +82,7 @@ var gmailbuttons = {
         
     if (this.IsServerGmailIMAP(this.GetMessageServer())) { 
       // this is a Gmail imap account
-    
+      alert("This message is in a Gmail IMAP account");
       /* get actual folder names from server  */
       try {
         var server = this.GetMessageServer();
@@ -119,7 +122,8 @@ var gmailbuttons = {
       }
         }
       if (trashButton) {
-        trashButton.hidden = false;
+        // if (!IsSpecialFolder(this.getMessageFolder(), Ci.nsMsgFolderFlags.Trash))	  
+        trashButton.hidden = false; // TODO hide trash button if we are in the [Gmail]/Trash folder
         trashButton.label = trashLabel;
         trashButton.tooltipText = trashTooltip;
       }
@@ -131,16 +135,15 @@ var gmailbuttons = {
         spamButton.tooltipText = spamTooltip;
       }    
     } else { 
-      // this is not a GMail account
-      
+      // this is not a GMail account      
+      alert("This message is NOT in a Gmail IMAP account");
       if (deleteButton) {
         if (deleteButton.oldTooltipText)
           deleteButton.tooltipText = deleteButton.oldTooltipText;
-      deleteButton.hidden = false;
-        }
-      if (trashButton)	
-          // if (!IsSpecialFolder(this.getMessageFolder(), Ci.nsMsgFolderFlags.Trash))	  
-        trashButton.hidden = true; // TODO hide trash button if we are in the [Gmail]/Trash folder
+        deleteButton.hidden = false;
+      }
+      if (trashButton)        
+        trashButton.hidden = true; 
       if (junkButton)
         junkButton.hidden = false;
       if (spamButton)
