@@ -58,9 +58,9 @@ var gmailbuttons = {
     if (!(aServer instanceof Ci.nsIImapIncomingServer))
       return;
     // check to see if it is imap and Gmail server
-    alert("Type: " + aServer.type + "\nisGmail: " + aServer.isGMailServer +
-        "\nName: " + aServer.hostName);
     var gmailHostNames = ["imap.gmail.com", "imap.googlemail.com"]; // TODO - pull these to a config file	
+    // built-in isGMailServer function is broken in German version of Thunderbird
+    // so we check the host name as well
     return (aServer.type == "imap" && aServer.isGMailServer) || (gmailHostNames.indexOf(aServer.hostName) >= 0);
   },
   
@@ -82,7 +82,7 @@ var gmailbuttons = {
         
     if (this.IsServerGmailIMAP(this.GetMessageServer())) { 
       // this is a Gmail imap account
-      alert("This message is in a Gmail IMAP account");
+      
       /* get actual folder names from server  */
       try {
         var server = this.GetMessageServer();
@@ -135,8 +135,8 @@ var gmailbuttons = {
         spamButton.tooltipText = spamTooltip;
       }    
     } else { 
-      // this is not a GMail account      
-      alert("This message is NOT in a Gmail IMAP account");
+      /* this is not a GMail account */
+      
       if (deleteButton) {
         if (deleteButton.oldTooltipText)
           deleteButton.tooltipText = deleteButton.oldTooltipText;
