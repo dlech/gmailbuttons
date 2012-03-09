@@ -1,5 +1,6 @@
 
 var gmailbuttons = {
+
   onLoad: function () {
     // initialization code
     this.initialized = true;
@@ -80,15 +81,6 @@ var gmailbuttons = {
       (gmailHostNames.indexOf(aServer.hostName) >= 0);
   },
 
-  IsSpecialFolder: function (aFolder, aFlag) {
-    // make sure aFolder is a valid folder
-    if (!(aFolder instanceof Ci.nsMessageFolder)) {
-      return;
-    }
-    // check if aFolder has special folder flag
-    return aFolder.isSpecialFolder(aFlag);
-  },
-
   updateJunkSpamButtons: function () {
 
     var
@@ -97,11 +89,14 @@ var gmailbuttons = {
       junkButton,
       spamButton,
       server,
+      thisFolder,
       serverRootFolder,
       trashFolder,
       spamFolder,
       trashLabel,
       spamLabel,
+      isTrashFolder,
+      isSpamFolder,
       trashTooltip,
       spamTooltip,
       showDelete;
@@ -112,12 +107,17 @@ var gmailbuttons = {
     junkButton = document.getElementById("hdrJunkButton");
     spamButton = document.getElementById("gmailbuttons-spam-button");
 
-    if (this.IsServerGmailIMAP(this.GetMessageServer())) {
+    server = this.GetMessageServer();
+
+    if (this.IsServerGmailIMAP(server)) {
       // this is a Gmail imap account
+
+      thisFolder = this.GetMessageFolder();
+      isTrashFolder = thisFolder.isSpecialFolder(Ci.nsMsgFolderFlags.Trash);
+      isSpamFolder = thisFolder.isSpecialFolder(Ci.nsMsgFolderFlags.Junk);
 
       /* get actual folder names from server  */
       try {
-        server = this.GetMessageServer();
         serverRootFolder = server.rootFolder;
         trashFolder = this.getSpecialFolder(serverRootFolder,
           nsMsgFolderFlags.Trash);
@@ -127,12 +127,13 @@ var gmailbuttons = {
         // don't need to do anything here
         //alert(ex);
       }
-      // get label text
+      /* get label text */
       trashLabel = trashFolder ? trashFolder.prettiestName :
           this.strings.getString("gmailbuttons.error");
       spamLabel = spamFolder ? spamFolder.prettiestName :
           this.strings.getString("gmailbuttons.error");
-      // get tooltip text
+
+      /* get tooltip text */
       trashTooltip = trashFolder ?
           this.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
             [trashFolder.URI.replace(serverRootFolder.URI, "").substr(1)], 1) :
@@ -148,21 +149,25 @@ var gmailbuttons = {
           deleteButton.oldTooltipText = deleteButton.tooltipText;
         }
         // apply new tooltip
-        deleteButton.tooltipText = this.strings.getString(
-          "gmailbuttons.deleteButton.normal.tooltip"
-        );
+        if (isTrashFolder || isSpamFolder) {
+          deleteButton.tooltipText = this.strings.getString(
+            "gmailbuttons.deleteButton.trashSpam.tooltip"
+          );
+        } else {
+          deleteButton.tooltipText = this.strings.getString(
+            "gmailbuttons.deleteButton.regular.tooltip"
+          );
+        }
+
         try {
           showDelete = this.prefs.getBoolPref("showDeleteButton");
-          deleteButton.hidden = !showDelete;
+          deleteButton.hidden = (!showDelete) && !(isTrashFolder || isSpamFolder);
         } catch (ex) {
           // preference does not exist - do nothing
         }
       }
       if (trashButton) {
-        //if (!IsSpecialFolder(this.getMessageFolder(),
-        //  Ci.nsMsgFolderFlags.Trash))
-        // TODO hide trash button if we are in the [Gmail]/Trash folder
-        trashButton.hidden = false;
+        trashButton.hidden = isTrashFolder;
         trashButton.label = trashLabel;
         trashButton.tooltipText = trashTooltip;
       }
@@ -170,7 +175,7 @@ var gmailbuttons = {
         junkButton.hidden = true;
       }
       if (spamButton) {
-        spamButton.hidden = false;
+        spamButton.hidden = isSpamFolder;
         spamButton.label = spamLabel;
         spamButton.tooltipText = spamTooltip;
       }
