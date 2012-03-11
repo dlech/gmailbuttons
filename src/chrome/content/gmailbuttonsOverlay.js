@@ -344,6 +344,29 @@ var gmailbuttons = {
       }
     } // trash button should not be visible if not a Gmail imap message
 	// TODO may want error message here
+  },
+
+  FetchLabels : function () {
+    var 
+      uri,
+      eventTarget,
+      folder,
+      attribute,
+      msgIdList;
+      var imapService = Cc["@mozilla.org/messenger/imapservice;1"]
+                         .getService(Ci.nsIImapService);
+    eventTarget = {};
+    folder = this.GetMessageFolder();
+    folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+    attribute = "X-GM-LABELS";
+    msgIdList = gFolderDisplay.selectedMessage.messageKey
+    try {
+      uri = folder.fetchCustomMsgAttribute(attribute, msgIdList, msgWindow);
+      //uri = imapService.fetchCustomMsgAttribute(eventTarget, folder, msgWindow, attribute, msgIdList);
+      alert(uri.spec);
+    } catch (ex) {
+      alert(ex);
+    }
   }
 };
 

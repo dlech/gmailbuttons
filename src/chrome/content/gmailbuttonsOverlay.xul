@@ -8,14 +8,20 @@
   <toolbar id="header-view-toolbar">
     <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;" 
       tooltiptext="&gmailbuttonsSpamButton.tooltip;" 
-	  class="toolbarbutton-1 msgHeaderView-button hdrJunkButton" 
-	  oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Junk, event);"
-	  removable="true"/>
+	    class="toolbarbutton-1 msgHeaderView-button hdrJunkButton" 
+	    oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Junk, event);"
+	    removable="true"
+    />
     <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;" 
       tooltiptext="&gmailbuttonsTrashButton.tooltip;" 
-	  class="toolbarbutton-1 msgHeaderView-button" 
-	  style="list-style-image: url('chrome://gmailbuttons/skin/icons/gmailbuttonsTrash.png')"
-	  oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Trash, event);"
-	  removable="true"/>
+      class="toolbarbutton-1 msgHeaderView-button" 
+      style="list-style-image: url('chrome://gmailbuttons/skin/icons/gmailbuttonsTrash.png')"
+      oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Trash, event);"
+      removable="true"
+    />
+    <toolbarbutton id="gmailbuttons-fetch-labels" label="Fetch Labels"
+      class="toolbarbutton-1 msgHeaderView-button" 
+      oncommand="gmailbuttons.FetchLabels();"
+    />
 	</toolbar>
 </overlay>
