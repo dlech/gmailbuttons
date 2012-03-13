@@ -351,22 +351,62 @@ var gmailbuttons = {
       uri,
       eventTarget,
       folder,
+      server,
       attribute,
       msgIdList;
-      var imapService = Cc["@mozilla.org/messenger/imapservice;1"]
+   
+    var imapService = Cc["@mozilla.org/messenger/imapservice;1"]
                          .getService(Ci.nsIImapService);
     eventTarget = {};
     folder = this.GetMessageFolder();
+    server = this.GetMessageServer();
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
     attribute = "X-GM-LABELS";
     msgIdList = gFolderDisplay.selectedMessage.messageKey
+            
+    uri = folder.fetchCustomMsgAttribute("X-GM-MSGID", msgIdList, msgWindow);
+    //uri = folder.issueCommandOnMsgs("fetch " + msgIdList + " (X-GM-LABELS)\r\n", msgIdList, msgWindow);
+    uri.QueryInterface(Ci.nsIImapUrl);
+    //alert(uri.customAttributeResult);
+    alert(uri.customCommandResult);
+    return;
+            
+    var urlListener = {
+      OnStartRunningUrl: function (aUrl) {
+        alert("OnStartRunningUrl:\n" + aUrl.spec);
+      },
+      OnStopRunningUrl: function (aUrl, aExitCode) {          
+        alert("OnStopRunningUrl:\n" + aUrl.spec +
+        "\n\nExitCode:\n" + aExitCode);
+      },
+    };
+                     
+    var url;
+    url = imapService.verifyLogon(folder, urlListener, msgWindow);
+    alert(url.spec);
+    /*
+    var imapUri = Components.classesByID["{21A89611-DC0D-11d2-806C-006008128C4E}"]
+                     .createInstance(Ci.nsIImapUrl);
+    imapUri.imapServerSink = server;
+    imapUri.imapAction = imapUri.nsImapActionSendText;
+    imapUri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+    imapUri.spec = url.spec;
+    */       
     try {
-      uri = folder.fetchCustomMsgAttribute(attribute, msgIdList, msgWindow);
-      //uri = imapService.fetchCustomMsgAttribute(eventTarget, folder, msgWindow, attribute, msgIdList);
-      alert(uri.spec);
+      if (server instanceof Ci.nsIImapIncomingServer) {
+        server.QueryInterface(Ci.nsIImapIncomingServer);
+        url.QueryInterface(Ci.nsIImapUrl);
+        url.imapAction = Ci.nsImapActionSendText;
+        server.GetImapConnectionAndLoadUrl({}, url, msgWindow);
+        alert("ok");
+      } else {
+        alert("bonk");
+      }
     } catch (ex) {
       alert(ex);
     }
+    
+    //alert(imapUri.spec);      
   }
 };
 
