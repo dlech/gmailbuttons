@@ -359,39 +359,80 @@ var gmailbuttons = {
                          .getService(Ci.nsIImapService);
     eventTarget = {};
     folder = this.GetMessageFolder();
-    server = this.GetMessageServer();
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+    server = this.GetMessageServer();
+    server.QueryInterface(Ci.nsIImapIncomingServer);
     attribute = "X-GM-LABELS";
     msgIdList = gFolderDisplay.selectedMessage.messageKey
-            
-    uri = folder.fetchCustomMsgAttribute("X-GM-MSGID", msgIdList, msgWindow);
-    //uri = folder.issueCommandOnMsgs("fetch " + msgIdList + " (X-GM-LABELS)\r\n", msgIdList, msgWindow);
-    uri.QueryInterface(Ci.nsIImapUrl);
-    //alert(uri.customAttributeResult);
-    alert(uri.customCommandResult);
-    return;
-            
+         
     var urlListener = {
       OnStartRunningUrl: function (aUrl) {
-        alert("OnStartRunningUrl:\n" + aUrl.spec);
+        aUrl.QueryInterface(Ci.nsIImapUrl);
+        alert("state: " + aUrl.requiredImapState +
+        " : " + aUrl.imapAction +
+        "\n\nOnStartRunningUrl:\n" + decodeURI(aUrl.spec));
       },
-      OnStopRunningUrl: function (aUrl, aExitCode) {          
-        alert("OnStopRunningUrl:\n" + aUrl.spec +
+      OnStopRunningUrl: function (aUrl, aExitCode) {
+        aUrl.QueryInterface(Ci.nsIImapUrl);
+        alert("OnStopRunningUrl:\n" + decodeURI(aUrl.spec) +
+        "\n\nResult: " + aUrl.customAttributeToFetch + 
+        "\n> " + aUrl.customAttributeResult +
         "\n\nExitCode:\n" + aExitCode);
       },
     };
+         
+    uri = folder.fetchCustomMsgAttribute("flags", msgIdList, msgWindow);
+    //uri = folder.issueCommandOnMsgs("fetch " + msgIdList + " (X-GM-LABELS)\r\n", msgIdList, msgWindow);
+    uri.QueryInterface(Ci.nsIImapUrl);
+    uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+    uri.RegisterListener(urlListener);
+    //alert("spec: " + decodeURI(uri.spec) + "\n\nresult: " + uri.customAttributeResult);
+    //alert(uri.customCommandResult);
+    //return;
                      
     var url;
-    url = imapService.verifyLogon(folder, urlListener, msgWindow);
-    alert(url.spec);
-    /*
-    var imapUri = Components.classesByID["{21A89611-DC0D-11d2-806C-006008128C4E}"]
-                     .createInstance(Ci.nsIImapUrl);
-    imapUri.imapServerSink = server;
-    imapUri.imapAction = imapUri.nsImapActionSendText;
-    imapUri.QueryInterface(Ci.nsIMsgMailNewsUrl);
-    imapUri.spec = url.spec;
-    */       
+    //url = imapService.verifyLogon(folder, urlListener, msgWindow);
+    //alert(url.spec);
+    try {
+      var delimiter = folder.hierarchyDelimiter;
+      var username = encodeURI(folder.username); 
+      var hostname = folder.hostname; 
+      var port = server.port;
+      // TODO check port for <= 0 and use default if needed
+      var imapUri = Components.classesByID["{21A89611-DC0D-11d2-806C-006008128C4E}"]
+        .createInstance(Ci.nsIImapUrl);
+      imapUri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+      imapUri.RegisterListener(urlListener);      
+      imapUri.QueryInterface(Ci.nsIMsgMessageUrl);
+      imapUri.externalLinkUrl = false;
+      imapUri.uri = "";
+      var urlspec = "imap://";
+      urlspec += username;
+      urlspec += "@";
+      urlspec += hostname;
+      urlspec += ":";
+      urlspec += port;
+      urlspec += "/customFetch>UID>"
+      urlspec += delimiter;
+      urlspec += folder.name;
+      urlspec += ">";
+      urlspec += msgIdList;
+      urlspec += ">";
+      urlspec += /*"flags"; //urlspec +=*/ attribute;
+      imapUri.spec = urlspec;
+      imapUri.msgWindow = msgWindow;
+      imapUri.updatingFolder = true;      
+      imapUri.imapServerSink = server;      
+      imapUri.imapMailFolderSink = folder;
+      imapUri.imapMessageSink = folder;
+      imapUri.folder = folder;            
+      imapUri.imapAction = 0x10000035; //Ci.nsImapUserDefinedFetchAttribute; TODO: why is this undefinded?
+      server.GetImapConnectionAndLoadUrl({}, imapUri, msgWindow);
+           
+    } catch (ex) {
+      alert(ex);
+    }
+    return;
     try {
       if (server instanceof Ci.nsIImapIncomingServer) {
         server.QueryInterface(Ci.nsIImapIncomingServer);
