@@ -345,6 +345,11 @@ var gmailbuttons = {
     } // trash button should not be visible if not a Gmail imap message
 	// TODO may want error message here
   },
+  
+  // built-in folder.Fetch
+  FetchCustomAttribute: function (aFolder, aAttribute, aMsgUid) {
+  
+  },
 
   FetchLabels : function () {
     var 
@@ -363,7 +368,9 @@ var gmailbuttons = {
     server = this.GetMessageServer();
     server.QueryInterface(Ci.nsIImapIncomingServer);
     attribute = "X-GM-LABELS";
-    msgIdList = gFolderDisplay.selectedMessage.messageKey
+    //attribute = "FLAGS";
+    msgIdList = gFolderDisplay.selectedMessage.messageKey;
+    //msgIdList = "1:*";
          
     var urlListener = {
       OnStartRunningUrl: function (aUrl) {
@@ -376,16 +383,17 @@ var gmailbuttons = {
         aUrl.QueryInterface(Ci.nsIImapUrl);
         alert("OnStopRunningUrl:\n" + decodeURI(aUrl.spec) +
         "\n\nResult: " + aUrl.customAttributeToFetch + 
-        "\n> " + aUrl.customAttributeResult +
+        "\n> " + aUrl.customCommandResult + //aUrl.customAttributeResult +
         "\n\nExitCode:\n" + aExitCode);
       },
     };
          
-    uri = folder.fetchCustomMsgAttribute("flags", msgIdList, msgWindow);
-    //uri = folder.issueCommandOnMsgs("fetch " + msgIdList + " (X-GM-LABELS)\r\n", msgIdList, msgWindow);
-    uri.QueryInterface(Ci.nsIImapUrl);
-    uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
-    uri.RegisterListener(urlListener);
+    //uri = folder.fetchCustomMsgAttribute(attribute, msgIdList, msgWindow);
+    //uri = folder.issueCommandOnMsgs("fetch " + msgIdList + " (X-GM-LABELS)%0D%0A", msgIdList, msgWindow);
+    //uri = folder.issueCommandOnMsgs("search undeleted", msgIdList, msgWindow);
+    //uri.QueryInterface(Ci.nsIImapUrl);
+    //uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+    //uri.RegisterListener(urlListener);
     //alert("spec: " + decodeURI(uri.spec) + "\n\nresult: " + uri.customAttributeResult);
     //alert(uri.customCommandResult);
     //return;
@@ -412,13 +420,22 @@ var gmailbuttons = {
       urlspec += hostname;
       urlspec += ":";
       urlspec += port;
-      urlspec += "/customFetch>UID>"
+      imapUri.spec = urlspec;
+      imapUri.imapAction = 0x10000034; // nsImapUserDefinedMsgCommand
+      urlspec += '/%0D%0A0\b\b xlist "" "*"%0D%0A>';
+      //urlspec += "/fetch " + msgIdList + " X-GM-LABELS%0D%0A>";
+      //urlspec += "/fetch>";
+      //urlspec += "/search undeleted>";
+      urlspec += "UID>";   
+      //urlspec += "SEQUENCE>";
       urlspec += delimiter;
       urlspec += folder.name;
       urlspec += ">";
+      //urlspec += "%08fetch ";
       urlspec += msgIdList;
-      urlspec += ">";
-      urlspec += /*"flags"; //urlspec +=*/ attribute;
+      //urlspec += " (" + attribute + ")";
+      //urlspec += ">";
+      //urlspec += attribute;
       imapUri.spec = urlspec;
       imapUri.msgWindow = msgWindow;
       imapUri.updatingFolder = true;      
@@ -426,7 +443,8 @@ var gmailbuttons = {
       imapUri.imapMailFolderSink = folder;
       imapUri.imapMessageSink = folder;
       imapUri.folder = folder;            
-      imapUri.imapAction = 0x10000035; //Ci.nsImapUserDefinedFetchAttribute; TODO: why is this undefinded?
+      //imapUri.imapAction = 0x10000035; //Ci.nsImapUserDefinedFetchAttribute; TODO: why is this undefinded?
+      
       server.GetImapConnectionAndLoadUrl({}, imapUri, msgWindow);
            
     } catch (ex) {
