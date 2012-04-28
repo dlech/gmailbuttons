@@ -5,8 +5,7 @@ var urlListener = {
   OnStopRunningUrl: function (aUrl, aExitCode) {
     aUrl.QueryInterface(Ci.nsIImapUrl);
     alert("Url:\n" + decodeURI(aUrl.spec) +
-    "\n\nResult: " + aUrl.customAttributeToFetch + 
-    "\n> " + aUrl.customAttributeResult +
+    "\n\nResult: " + aUrl.customAttributeResult +
     "\n\nExitCode:\n" + aExitCode);
   },
 };

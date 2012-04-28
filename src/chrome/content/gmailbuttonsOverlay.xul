@@ -18,10 +18,6 @@
       style="list-style-image: url('chrome://gmailbuttons/skin/icons/gmailbuttonsTrash.png')"
       oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Trash, event);"
       removable="true"
-    />
-    <toolbarbutton id="gmailbuttons-fetch-labels" label="Fetch Labels"
-      class="toolbarbutton-1 msgHeaderView-button" 
-      oncommand="gmailbuttons.FetchLabels();"
-    />
+    />    
 	</toolbar>
 </overlay>

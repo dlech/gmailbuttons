@@ -238,6 +238,7 @@ var gmailbuttons = {
 
     onEndHeaders: function () {
       gmailbuttons.updateJunkSpamButtons();
+      gmailbuttons.FetchLabels();
     },
 
     onEndAttachments: function () {
@@ -345,127 +346,63 @@ var gmailbuttons = {
     } // trash button should not be visible if not a Gmail imap message
 	// TODO may want error message here
   },
-  
-  // built-in folder.Fetch
-  FetchCustomAttribute: function (aFolder, aAttribute, aMsgUid) {
-  
+
+  CreateMessageLabelButton : function (aId, aLabel) {
+    const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+    var item = document.createElementNS(XUL_NS, "toolbarbutton"); // create a new XUL toolbarbutton
+    item.setAttribute("id", aId);
+    item.setAttribute("label", aLabel);
+    return item;
+  },
+
+  FetchCustomAttribute: function (aMessage, aAttribute, aUrlListener) {
+      var         
+        folder,
+        uri;
+      
+      folder = aMessage.folder;
+      folder.QueryInterface(Ci.nsIMsgImapMailFolder);   
+      
+      uri = folder.fetchCustomMsgAttribute(aAttribute, aMessage.messageKey, msgWindow);
+      uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+      uri.RegisterListener(aUrlListener);
   },
 
   FetchLabels : function () {
     var 
-      uri,
-      eventTarget,
-      folder,
-      server,
-      attribute,
-      msgIdList;
-   
-    var imapService = Cc["@mozilla.org/messenger/imapservice;1"]
-                         .getService(Ci.nsIImapService);
-    eventTarget = {};
-    folder = this.GetMessageFolder();
-    folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-    server = this.GetMessageServer();
-    server.QueryInterface(Ci.nsIImapIncomingServer);
-    attribute = "X-GM-LABELS";
-    //attribute = "FLAGS";
-    msgIdList = gFolderDisplay.selectedMessage.messageKey;
-    //msgIdList = "1:*";
-         
-    var urlListener = {
-      OnStartRunningUrl: function (aUrl) {
-        aUrl.QueryInterface(Ci.nsIImapUrl);
-        alert("state: " + aUrl.requiredImapState +
-        " : " + aUrl.imapAction +
-        "\n\nOnStartRunningUrl:\n" + decodeURI(aUrl.spec));
-      },
-      OnStopRunningUrl: function (aUrl, aExitCode) {
-        aUrl.QueryInterface(Ci.nsIImapUrl);
-        alert("OnStopRunningUrl:\n" + decodeURI(aUrl.spec) +
-        "\n\nResult: " + aUrl.customAttributeToFetch + 
-        "\n> " + aUrl.customCommandResult + //aUrl.customAttributeResult +
-        "\n\nExitCode:\n" + aExitCode);
-      },
-    };
-         
-    //uri = folder.fetchCustomMsgAttribute(attribute, msgIdList, msgWindow);
-    //uri = folder.issueCommandOnMsgs("fetch " + msgIdList + " (X-GM-LABELS)%0D%0A", msgIdList, msgWindow);
-    //uri = folder.issueCommandOnMsgs("search undeleted", msgIdList, msgWindow);
-    //uri.QueryInterface(Ci.nsIImapUrl);
-    //uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
-    //uri.RegisterListener(urlListener);
-    //alert("spec: " + decodeURI(uri.spec) + "\n\nresult: " + uri.customAttributeResult);
-    //alert(uri.customCommandResult);
-    //return;
-                     
-    var url;
-    //url = imapService.verifyLogon(folder, urlListener, msgWindow);
-    //alert(url.spec);
-    try {
-      var delimiter = folder.hierarchyDelimiter;
-      var username = encodeURI(folder.username); 
-      var hostname = folder.hostname; 
-      var port = server.port;
-      // TODO check port for <= 0 and use default if needed
-      var imapUri = Components.classesByID["{21A89611-DC0D-11d2-806C-006008128C4E}"]
-        .createInstance(Ci.nsIImapUrl);
-      imapUri.QueryInterface(Ci.nsIMsgMailNewsUrl);
-      imapUri.RegisterListener(urlListener);      
-      imapUri.QueryInterface(Ci.nsIMsgMessageUrl);
-      imapUri.externalLinkUrl = false;
-      imapUri.uri = "";
-      var urlspec = "imap://";
-      urlspec += username;
-      urlspec += "@";
-      urlspec += hostname;
-      urlspec += ":";
-      urlspec += port;
-      imapUri.spec = urlspec;
-      imapUri.imapAction = 0x10000034; // nsImapUserDefinedMsgCommand
-      urlspec += '/%0D%0A0\b\b xlist "" "*"%0D%0A>';
-      //urlspec += "/fetch " + msgIdList + " X-GM-LABELS%0D%0A>";
-      //urlspec += "/fetch>";
-      //urlspec += "/search undeleted>";
-      urlspec += "UID>";   
-      //urlspec += "SEQUENCE>";
-      urlspec += delimiter;
-      urlspec += folder.name;
-      urlspec += ">";
-      //urlspec += "%08fetch ";
-      urlspec += msgIdList;
-      //urlspec += " (" + attribute + ")";
-      //urlspec += ">";
-      //urlspec += attribute;
-      imapUri.spec = urlspec;
-      imapUri.msgWindow = msgWindow;
-      imapUri.updatingFolder = true;      
-      imapUri.imapServerSink = server;      
-      imapUri.imapMailFolderSink = folder;
-      imapUri.imapMessageSink = folder;
-      imapUri.folder = folder;            
-      //imapUri.imapAction = 0x10000035; //Ci.nsImapUserDefinedFetchAttribute; TODO: why is this undefinded?
+      urlListener,
+      message;
       
-      server.GetImapConnectionAndLoadUrl({}, imapUri, msgWindow);
+    try {
+      urlListener = {
+        OnStartRunningUrl: function (aUrl) { },
+        OnStopRunningUrl: function (aUrl, aExitCode) {
+
+          aUrl.QueryInterface(Ci.nsIImapUrl);
+          
+          // TODO verify that message has not chnaged using aUrl.listOfMessageIds
+          
+          // TODO create seperate toolbar for message labels
+          var button = gmailbuttons.CreateMessageLabelButton("gmailbuttons-label1", aUrl.customAttributeResult);
+          var toolbar = document.getElementById("header-view-toolbar");
+          toolbar.appendChild(button);          
+        }
+      };
+
+      /* remove existing label buttons */
+      var i = 1;
+      var toolbar = document.getElementById("header-view-toolbar");
+      var button;
+      while (button = document.getElementById("gmailbuttons-label" + i)) {
+        toolbar.removeChild(button);
+      }
+
+      message = gFolderDisplay.selectedMessage;        
+      this.FetchCustomAttribute(message, "X-GM-LABELS", urlListener);
            
     } catch (ex) {
       alert(ex);
-    }
-    return;
-    try {
-      if (server instanceof Ci.nsIImapIncomingServer) {
-        server.QueryInterface(Ci.nsIImapIncomingServer);
-        url.QueryInterface(Ci.nsIImapUrl);
-        url.imapAction = Ci.nsImapActionSendText;
-        server.GetImapConnectionAndLoadUrl({}, url, msgWindow);
-        alert("ok");
-      } else {
-        alert("bonk");
-      }
-    } catch (ex) {
-      alert(ex);
-    }
-    
-    //alert(imapUri.spec);      
+    }    
   }
 };
 
