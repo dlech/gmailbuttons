@@ -1,10 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOverlay.dtd">
 <overlay id="gmailbuttons-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <!-- include required scripts -->
   <script src="gmailbuttonsOverlay.js"/>
+  
+  <!-- include strings used in xul -->
   <stringbundleset id="stringbundleset">
     <stringbundle id="gmailbuttons-strings" src="chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties"/>
   </stringbundleset>  
+    
+  <!-- additional toolbar for dispaying gmail labels in message header area -->
+  <vbox id="expandedHeadersBox">
+    <hbox id="gmailbuttons-header-view" insertafter="expandedHeadersBottomBox" 
+      style="margin-bottom: 5px;">
+      <label id="gmailbuttons-labels-label" value="&gmailbuttonsLabels.label;" 
+        control="gmailbuttons-label-toolbox" style="padding-top: 3px;" />
+      <description id="gmailbuttons-labels-none" value="&gmailbuttonsLabels.none;" 
+        style="padding-top: 3px;" />
+      <toolbox id="gmailbuttons-label-toolbox"
+        class="inline-toolbox">
+        <toolbar id="gmailbuttons-label-toolbar">
+        </toolbar>
+      </toolbox>
+    </hbox>
+  </vbox>
+  
+  <!-- additional gmail specific buttons -->
   <toolbar id="header-view-toolbar">
     <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;" 
       tooltiptext="&gmailbuttonsSpamButton.tooltip;" 
@@ -20,4 +42,5 @@
       removable="true"
     />    
 	</toolbar>
+  
 </overlay>

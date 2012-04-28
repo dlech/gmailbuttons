@@ -349,9 +349,43 @@ var gmailbuttons = {
 
   CreateMessageLabelButton : function (aId, aLabel) {
     const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-    var item = document.createElementNS(XUL_NS, "toolbarbutton"); // create a new XUL toolbarbutton
+    var item = document.createElementNS(XUL_NS, "label"); // create a new XUL toolbarbutton
     item.setAttribute("id", aId);
-    item.setAttribute("label", aLabel);
+    item.setAttribute("fetched-label", aLabel);
+    item.setAttribute("style", "-moz-appearance: tooltip;" +
+      "padding: 0px !important; margin: 0px 2px !important;");
+    // strip enclosing quotes if present
+    if ((aLabel.indexOf("\"") == 0) && (aLabel.lastIndexOf("\"") == (aLabel.length - 1))) {
+      aLabel = aLabel.substring(1, aLabel.length - 1);
+    }
+    // strip leading backslashes if present (on special folders)
+    if (aLabel.indexOf("\\\\") == 0) {
+      aLabel = aLabel.substring(2);
+    }
+    var label = document.createElementNS(XUL_NS, "label");
+    label.setAttribute("value", aLabel);
+    item.appendChild(label);
+    
+    var deleteMsgFromFolder = function () {
+      var folderName = item.getAttribute("fetched-label");
+      if (folderName.indexOf("\"\\\\") == 0) {
+        // TODO make "[Gmail]" a preference or find a way to fetch it from server
+        folderName = "\"[Gmail]/" + folderName.substring(3);
+      }
+      
+      var server = gmailbuttons.GetMessageServer();
+      // TODO escape folderName
+      var folder = server.rootFolder.findSubFolder(folderName);
+      alert(folder);
+    };
+     
+    var delButton = document.createElementNS(XUL_NS, "label");
+    delButton.setAttribute("style", "-moz-appearance: button; padding: 0px 2px !important; margin: 0px !important;");
+    delButton.setAttribute("value", "X");
+    delButton.addEventListener("click", deleteMsgFromFolder, false);
+    //delButton.setAttribute("command", "gmailbuttons-remove-label");    
+    item.appendChild(delButton);
+    
     return item;
   },
 
@@ -374,32 +408,60 @@ var gmailbuttons = {
       message;
       
     try {
+      // fetchCustomAttribute result is returned asyncronously so we have 
+      // to create a listener to handle the result.
       urlListener = {
-        OnStartRunningUrl: function (aUrl) { },
-        OnStopRunningUrl: function (aUrl, aExitCode) {
+        OnStartRunningUrl: function (aUrl) {
+          // don't do anything on start
+        },
 
+        OnStopRunningUrl: function (aUrl, aExitCode) {
           aUrl.QueryInterface(Ci.nsIImapUrl);
-          
-          // TODO verify that message has not chnaged using aUrl.listOfMessageIds
-          
-          // TODO create seperate toolbar for message labels
-          var button = gmailbuttons.CreateMessageLabelButton("gmailbuttons-label1", aUrl.customAttributeResult);
-          var toolbar = document.getElementById("header-view-toolbar");
-          toolbar.appendChild(button);          
+          // only add labels to ui if message has not changed since call was made
+          if (gFolderDisplay.selectedMessage.messageKey == aUrl.listOfMessageIds) {
+            var labels = aUrl.customAttributeResult;
+            // trim parenthensis
+            if ((labels.indexOf("(") == 0) && (labels.lastIndexOf(")") == (labels.length - 1))) {
+              labels = labels.substring(1, labels.length - 1);
+            }
+            // split on spaces that are not within quotes
+            // thank you http://stackoverflow.com/a/6464500
+            var reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
+            labels = labels.split(reg);
+            var toolbar = document.getElementById("gmailbuttons-label-toolbar");
+            var i;
+            for (i = 0; i < labels.length; i++) {
+              if (labels[i].length == 0) {
+                break;
+              }
+              var button = gmailbuttons.CreateMessageLabelButton("gmailbuttons-label" + i, labels[i]);
+              toolbar.appendChild(button);
+            }
+            // show "None" if there are no labels
+            var noneDesc = document.getElementById("gmailbuttons-labels-none");
+            noneDesc.hidden = (i > 0);
+          }
         }
       };
 
       /* remove existing label buttons */
-      var i = 1;
-      var toolbar = document.getElementById("header-view-toolbar");
+      var i = 0;
+      var toolbar = document.getElementById("gmailbuttons-label-toolbar");
       var button;
       while (button = document.getElementById("gmailbuttons-label" + i)) {
         toolbar.removeChild(button);
+        i++;
       }
 
-      message = gFolderDisplay.selectedMessage;        
-      this.FetchCustomAttribute(message, "X-GM-LABELS", urlListener);
-           
+      var hbox = document.getElementById("gmailbuttons-header-view");
+      // only show gmail labels if we are in a gmail account
+      if (this.IsServerGmailIMAP(this.GetMessageServer())) {
+        hbox.hidden = false;
+        message = gFolderDisplay.selectedMessage;
+        this.FetchCustomAttribute(message, "X-GM-LABELS", urlListener);
+      } else {
+        hbox.hidden = true;
+      }           
     } catch (ex) {
       alert(ex);
     }    
