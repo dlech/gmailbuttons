@@ -368,15 +368,59 @@ var gmailbuttons = {
     
     var deleteMsgFromFolder = function () {
       var folderName = item.getAttribute("fetched-label");
-      if (folderName.indexOf("\"\\\\") == 0) {
+      // remove enclosing quotes
+      if ((folderName.indexOf("\"") == 0) && (folderName.lastIndexOf("\"") == (folderName.length - 1))) {
+        folderName = folderName.substring(1, folderName.length - 1);
+      }
+      // leading '\\' indicates that this is a 'special' folder
+      if (folderName.indexOf('\\\\') == 0) {
         // TODO make "[Gmail]" a preference or find a way to fetch it from server
-        folderName = "\"[Gmail]/" + folderName.substring(3);
+        folderName = folderName.substring(2);
+        // TODO need to do something different here to test for Inbox
+        if (folderName != "Inbox") {
+          folderName = '[Gmail]/' + folderName;
+        }
       }
       
       var server = gmailbuttons.GetMessageServer();
       // TODO escape folderName
       var folder = server.rootFolder.findSubFolder(folderName);
-      alert(folder);
+      
+      searchMsgIdUrlListener = {        
+        onSearchHit: function (aHeader, aFolder) {
+          var msgId = aHeader.messageKey;
+          alert(aFolder.name + ", " + msgId);
+        },
+        
+        onSearchDone : function (aStatus) {
+          // do nothing
+        },
+        
+        onNewSearch : function () {
+          // do nothing
+        }
+      };
+      
+      fetchCustomAttributeUrlListener = {
+        OnStartRunningUrl: function (aUrl) {
+          // don't do anything on start
+        },
+
+        OnStopRunningUrl: function (aUrl, aExitCode) {
+          aUrl.QueryInterface(Ci.nsIImapUrl);
+          // only add labels to ui if message has not changed since call was made          
+          var msgId = aUrl.customAttributeResult;
+          folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+          var uri = folder.issueCommandOnMsgs("SEARCH X-GM-MSGID", msgId, msgWindow);
+          uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+          uri.searchSession = Cc["@mozilla.org/messenger/searchSession;1"]
+            .createInstance(Ci.nsIMsgSearchSession);
+          uri.searchSession.registerListener(searchMsgIdUrlListener);
+        }
+      };
+      
+      gmailbuttons.FetchCustomAttribute(gFolderDisplay.selectedMessage,
+        "X-GM-MSGID", fetchCustomAttributeUrlListener);
     };
      
     var delButton = document.createElementNS(XUL_NS, "label");
@@ -395,7 +439,7 @@ var gmailbuttons = {
         uri;
       
       folder = aMessage.folder;
-      folder.QueryInterface(Ci.nsIMsgImapMailFolder);   
+      folder.QueryInterface(Ci.nsIMsgImapMailFolder);
       
       uri = folder.fetchCustomMsgAttribute(aAttribute, aMessage.messageKey, msgWindow);
       uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
