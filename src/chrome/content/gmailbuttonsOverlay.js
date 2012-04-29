@@ -376,8 +376,8 @@ var gmailbuttons = {
       if (folderName.indexOf('\\\\') == 0) {
         // TODO make "[Gmail]" a preference or find a way to fetch it from server
         folderName = folderName.substring(2);
-        // TODO need to do something different here to test for Inbox
-        if (folderName != "Inbox") {
+        // TODO need to do something different here to test for Inbox and Important - from XLIST perhaps
+        if (folderName != "Inbox" && folderName != "Important") {
           folderName = '[Gmail]/' + folderName;
         }
       }
@@ -386,10 +386,12 @@ var gmailbuttons = {
       // TODO escape folderName
       var folder = server.rootFolder.findSubFolder(folderName);
       
+      /* this listener actually deletes the message */
       searchMsgIdUrlListener = {        
         onSearchHit: function (aHeader, aFolder) {
           var msgId = aHeader.messageKey;
           alert(aFolder.name + ", " + msgId);
+          // TODO delete message
         },
         
         onSearchDone : function (aStatus) {
@@ -401,26 +403,47 @@ var gmailbuttons = {
         }
       };
       
-      fetchCustomAttributeUrlListener = {
+      /* this is the callback for the FETCH X-GM-MSGID command */
+      fetchXGmMsgidUrlListener = {
         OnStartRunningUrl: function (aUrl) {
           // don't do anything on start
         },
 
         OnStopRunningUrl: function (aUrl, aExitCode) {
-          aUrl.QueryInterface(Ci.nsIImapUrl);
-          // only add labels to ui if message has not changed since call was made          
-          var msgId = aUrl.customAttributeResult;
+          aUrl.QueryInterface(Ci.nsIImapUrl);         
+          var msgId = aUrl.customAttributeResult; // the Gmail message id
           folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+
+          /* now search for the matching message in the folder that was obtained from the label */
           var uri = folder.issueCommandOnMsgs("SEARCH X-GM-MSGID", msgId, msgWindow);
           uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+
+          /* have to create a fake searchSession to get the results of the search command
+           * that was sent using issueCustomCommandOnMsgs
+           */
           uri.searchSession = Cc["@mozilla.org/messenger/searchSession;1"]
             .createInstance(Ci.nsIMsgSearchSession);
+          // use onlineMail scope so that search will stay running until after onSearchHit
+          // callback is called from the result of the issueCommandOnMsgs
+          uri.searchSession.addScopeTerm(Ci.nsMsgSearchScope.onlineMail, folder);
+
+          /* search terms are not acutally used - dummy values are so searchSession initializes properly */
+          var searchTerm = uri.searchSession.createTerm(); // dummy search terms
+          searchTerm.attrib = Ci.nsMsgSearchAttrib.Size; // dummy attrib
+          // This is tricky - value.attrib must be set before actual values
+          // see http://mxr.mozilla.org/comm-central/source/mailnews/base/test/unit/test_bug404489.js#183
+          searchTerm.value.attrib = searchTerm.attrib;
+          searchTerm.value.size = 0; // message should never have size < 0
+          searchTerm.op = Ci.nsMsgSearchOp.IsLessThan;
+          uri.searchSession.appendTerm(searchTerm);
+
           uri.searchSession.registerListener(searchMsgIdUrlListener);
+          uri.searchSession.search(msgWindow);
         }
       };
       
       gmailbuttons.FetchCustomAttribute(gFolderDisplay.selectedMessage,
-        "X-GM-MSGID", fetchCustomAttributeUrlListener);
+        "X-GM-MSGID", fetchXGmMsgidUrlListener);
     };
      
     var delButton = document.createElementNS(XUL_NS, "label");
