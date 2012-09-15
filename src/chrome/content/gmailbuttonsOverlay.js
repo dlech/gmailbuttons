@@ -5,24 +5,25 @@ var gmailbuttons = {
     // initialization code
     this.initialized = true;
     this.strings = document.getElementById("gmailbuttons-strings");
+
     // add support for preferences
-    this.prefs = Components.classes["@mozilla.org/preferences-service;1"]
+    this.extPrefs = Components.classes["@mozilla.org/preferences-service;1"]
         .getService(Components.interfaces.nsIPrefService)
         .getBranch("extensions.gmailbuttons.");
-    this.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2);
-    this.prefs.addObserver("", this, false);
+    this.extPrefs.QueryInterface(Components.interfaces.nsIPrefBranch2);
+    this.extPrefs.addObserver("", this, false);
   },
 
   onUnload: function () {
     // cleanup preferences
-    this.prefs.removeObserver("", this);
+    this.extPrefs.removeObserver("", this);
   },
 
   observe: function (aSubject, aTopic, aData) {
     if (aTopic != "nsPref:changed") {
       return; // only need to act on pref change
     }
-    // process change	
+    // process change
     switch (aData) {
     case "showDeleteButton":
       this.updateJunkSpamButtons();
@@ -89,6 +90,7 @@ var gmailbuttons = {
       junkButton,
       spamButton,
       server,
+      serverPrefs,
       thisFolder,
       serverRootFolder,
       trashFolder,
@@ -112,15 +114,22 @@ var gmailbuttons = {
     if (this.IsServerGmailIMAP(server)) {
       // this is a Gmail imap account
 
+        // also look at mail.server prefs
+      serverPrefs = Components.classes["@mozilla.org/preferences-service;1"]
+          .getService(Components.interfaces.nsIPrefService)
+          .getBranch("mail.server." + server.key + ".");
+
       thisFolder = this.GetMessageFolder();
-      isTrashFolder = thisFolder.isSpecialFolder(Ci.nsMsgFolderFlags.Trash);
+      isTrashFolder = thisFolder.isSpecialFolder(Ci.nsMsgFolderFlags.Trash) ||
+          (serverPrefs.prefHasUserValue("trash_folder_name") &&
+          serverPrefs.getCharPref("trash_folder_name") == thisFolder.onlineName);
       isSpamFolder = thisFolder.isSpecialFolder(Ci.nsMsgFolderFlags.Junk);
 
       /* get actual folder names from server  */
       try {
         serverRootFolder = server.rootFolder;
         trashFolder = this.getSpecialFolder(serverRootFolder,
-          nsMsgFolderFlags.Trash);
+            nsMsgFolderFlags.Trash);
         spamFolder = this.getSpecialFolder(serverRootFolder,
           nsMsgFolderFlags.Junk);
       } catch (ex) {
@@ -160,7 +169,7 @@ var gmailbuttons = {
         }
 
         try {
-          showDelete = this.prefs.getBoolPref("showDeleteButton");
+          showDelete = this.extPrefs.getBoolPref("showDeleteButton");
           deleteButton.hidden = (!showDelete) &&
             !(isTrashFolder || isSpamFolder);
         } catch (ex) {
@@ -210,7 +219,7 @@ var gmailbuttons = {
       junkButton,
       spamButton;
 
-    // get message-specific header buttons	
+    // get message-specific header buttons
     deleteButton = document.getElementById("hdrTrashButton");
     trashButton = document.getElementById("gmailbuttons-trash-button");
     junkButton = document.getElementById("hdrJunkButton");
@@ -256,7 +265,7 @@ var gmailbuttons = {
         junkStatusColumn;
 
       try {
-        hideJunkStatusCol = gmailbuttons.prefs.getBoolPref("hideJunkStatusCol");
+        hideJunkStatusCol = gmailbuttons.extPrefs.getBoolPref("hideJunkStatusCol");
         // don't need to do anything if pref doesn't exist or is false
         if (!hideJunkStatusCol) {
           return;
@@ -298,7 +307,10 @@ var gmailbuttons = {
     var
       subfolders,
       subfolder,
-      result;
+      result,
+      server,
+      serverPrefs,
+      nsMsgFolderFlags;
 
     /* TODO would be nice if we could do this directly using XPATH */
 
@@ -324,7 +336,16 @@ var gmailbuttons = {
         }
       }
     }
-    // no trash folders were found
+    // if nothing with matching flags were found, try looking in user prefs
+    server = aFolder.server;
+    serverPrefs = Components.classes["@mozilla.org/preferences-service;1"]
+        .getService(Components.interfaces.nsIPrefService)
+        .getBranch("mail.server." + server.key + ".");
+    nsMsgFolderFlags = Components.interfaces.nsMsgFolderFlags;
+    if (aFlag == nsMsgFolderFlags.Trash && serverPrefs.prefHasUserValue("trash_folder_name")) {
+      return aFolder.rootFolder.findSubFolder(serverPrefs.getCharPref("trash_folder_name"));
+    }
+    // no matching folders were found
     return;
   },
 
@@ -345,7 +366,7 @@ var gmailbuttons = {
         //return; // otherwise show error mesage below
       }
     } // trash button should not be visible if not a Gmail imap message
-	// TODO may want error message here
+  // TODO may want error message here
   },
 
   CreateMessageLabelButton : function (aId, aLabel) {
@@ -419,7 +440,7 @@ var gmailbuttons = {
         SetMessageKey : function (aKey) { },
         GetMessageId : function (aMessageId) { },
         OnStopCopy : function (aStatus) { },
-        
+
         OnStartRunningUrl: function (aUrl) {
           // don't do anything on start
         },
@@ -522,7 +543,7 @@ var gmailbuttons = {
       " padding: 0px 2px !important; margin: 0px !important;");
     delButton.setAttribute("value", "X");
     delButton.addEventListener("click", deleteMsgFromFolder, false);
-    //delButton.setAttribute("command", "gmailbuttons-remove-label");    
+    //delButton.setAttribute("command", "gmailbuttons-remove-label");
     item.appendChild(delButton);
 
     return item;
@@ -552,7 +573,7 @@ var gmailbuttons = {
       hbox;
 
     try {
-      // fetchCustomAttribute result is returned asyncronously so we have 
+      // fetchCustomAttribute result is returned asyncronously so we have
       // to create a listener to handle the result.
       urlListener = {
         OnStartRunningUrl: function (aUrl) {
