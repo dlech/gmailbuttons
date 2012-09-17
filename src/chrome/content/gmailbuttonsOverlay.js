@@ -374,6 +374,7 @@ var gmailbuttons = {
     var
       XUL_NS,
       item,
+      labelForDisplay,
       labelLabel,
       deleteMsgFromFolder,
       delButton;
@@ -386,164 +387,28 @@ var gmailbuttons = {
     item.setAttribute("fetched-label", aLabel);
     item.setAttribute("style", "-moz-appearance: tooltip;" +
       "padding: 0px !important; margin: 0px 2px !important;");
+    labelForDisplay = aLabel;
     // strip enclosing quotes if present
-    if ((aLabel.indexOf("\"") == 0) &&
-        (aLabel.lastIndexOf("\"") == (aLabel.length - 1))) {
-      aLabel = aLabel.substring(1, aLabel.length - 1);
+    if ((labelForDisplay.indexOf("\"") == 0) &&
+        (labelForDisplay.lastIndexOf("\"") == (labelForDisplay.length - 1))) {
+      labelForDisplay = labelForDisplay.substring(1,
+        labelForDisplay.length - 1);
     }
     // strip leading backslashes if present (on special folders)
-    if (aLabel.indexOf("\\\\") == 0) {
-      aLabel = aLabel.substring(2);
+    if (labelForDisplay.indexOf("\\\\") == 0) {
+      labelForDisplay = labelForDisplay.substring(2);
     }
     labelLabel = document.createElementNS(XUL_NS, "label");
-    labelLabel.setAttribute("value", aLabel);
+    labelLabel.setAttribute("value", labelForDisplay);
     item.appendChild(labelLabel);
-
-    deleteMsgFromFolder = function () {
-
-      var
-        folderName,
-        server,
-        folder,
-        messageDeletedUrlListener,
-        searchMsgIdUrlListener,
-        fetchXGmMsgidUrlListener;
-
-      folderName = item.getAttribute("fetched-label");
-      // remove enclosing quotes
-      if ((folderName.indexOf("\"") == 0) &&
-          (folderName.lastIndexOf("\"") == (folderName.length - 1))) {
-        folderName = folderName.substring(1, folderName.length - 1);
-      }
-      // leading '\\' indicates that this is a 'special' folder
-      if (folderName.indexOf('\\\\') == 0) {
-        // TODO make "[Gmail]" a preference or find a way to fetch it
-        // from server
-        folderName = folderName.substring(2);
-        // TODO need to do something different here
-        // to test for Inbox and Important - from XLIST perhaps
-        if (folderName != "Inbox" && folderName != "Important") {
-          folderName = '[Gmail]/' + folderName;
-        }
-      }
-
-      server = gmailbuttons.GetMessageServer();
-      // TODO escape folderName if needed
-      folder = server.rootFolder.findSubFolder(folderName);
-
-      messageDeletedUrlListener = {
-        /* since message is deleted and not moved to trash,
-         * the nsIMsgCopyServiceListener interface is not used
-         */
-        OnStartCopy: function () { },
-        OnProgress: function (aProgress, aProgressMax) { },
-        SetMessageKey : function (aKey) { },
-        GetMessageId : function (aMessageId) { },
-        OnStopCopy : function (aStatus) { },
-
-        OnStartRunningUrl: function (aUrl) {
-          // don't do anything on start
-        },
-
-        OnStopRunningUrl: function (aUrl, aExitCode) {
-          // update labels after message has been deleted
-          gmailbuttons.FetchLabels();
-        },
-
-        QueryInterface: function (iid) {
-          if (!iid.equals(Ci.nsIUrlListener) &&
-              !iid.equals(Ci.nsIMsgCopyServiceListener) &&
-              !iid.equals(Ci.nsISupports)) {
-            throw Components.results.NS_ERROR_NO_INTERFACE;
-          }
-          return this;
-        }
-      };
-
-      /* this listener actually deletes the message */
-      searchMsgIdUrlListener = {
-        onSearchHit: function (aHeader, aFolder) {
-          var
-            messages;
-
-          //var msgId = aHeader.messageKey;
-          messages = Components.classes["@mozilla.org/array;1"]
-              .createInstance(Components.interfaces.nsIMutableArray);
-          messages.appendElement(aHeader, false);
-          folder.deleteMessages(messages, msgWindow, true, false,
-            messageDeletedUrlListener, false);
-        },
-
-        onSearchDone : function (aStatus) {
-          // do nothing
-        },
-
-        onNewSearch : function () {
-          // do nothing
-        }
-      };
-
-      /* this is the callback for the FETCH X-GM-MSGID command */
-      fetchXGmMsgidUrlListener = {
-        OnStartRunningUrl: function (aUrl) {
-          // don't do anything on start
-        },
-
-        OnStopRunningUrl: function (aUrl, aExitCode) {
-
-          var
-            msgId,
-            uri,
-            searchTerm;
-
-          aUrl.QueryInterface(Ci.nsIImapUrl);
-          msgId = aUrl.customAttributeResult; // the Gmail message id
-          folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-
-          /* now search for the matching message in the folder
-           * that was obtained from the label
-           */
-          uri = folder.issueCommandOnMsgs("SEARCH X-GM-MSGID",
-            msgId, msgWindow);
-          uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
-
-          /* have to create a fake searchSession to get the results
-           * of the search command that was sent using issueCustomCommandOnMsgs
-           */
-          uri.searchSession = Cc["@mozilla.org/messenger/searchSession;1"]
-            .createInstance(Ci.nsIMsgSearchSession);
-          // use onlineMail scope so that search will stay running until
-          // after onSearchHit callback is called from the result
-          // of the issueCommandOnMsgs
-          uri.searchSession.addScopeTerm(Ci.nsMsgSearchScope.onlineMail,
-            folder);
-
-          /* search terms are not acutally used -
-           * dummy values are so searchSession initializes properly */
-          searchTerm = uri.searchSession.createTerm(); // dummy search terms
-          searchTerm.attrib = Ci.nsMsgSearchAttrib.Size; // dummy attrib
-          // This is tricky - value.attrib must be set before actual values
-          // see http://mxr.mozilla.org/comm-central/source/mailnews/base/test/unit/test_bug404489.js#183
-          searchTerm.value.attrib = searchTerm.attrib;
-          searchTerm.value.size = 0; // message should never have size < 0
-          searchTerm.op = Ci.nsMsgSearchOp.IsLessThan;
-          uri.searchSession.appendTerm(searchTerm);
-
-          uri.searchSession.registerListener(searchMsgIdUrlListener);
-          uri.searchSession.search(null); // null so progress bar does not show
-        }
-      };
-
-      gmailbuttons.FetchCustomAttribute(gFolderDisplay.selectedMessage,
-        "X-GM-MSGID", fetchXGmMsgidUrlListener);
-    };
 
     delButton = document.createElementNS(XUL_NS, "label");
     delButton.setAttribute("style", "-moz-appearance: button;" +
       " padding: 0px 2px !important; margin: 0px !important;");
     delButton.setAttribute("value", "X");
-    delButton.addEventListener("click", deleteMsgFromFolder, false);
-    //delButton.setAttribute("command", "gmailbuttons-remove-label");
+    delButton.addEventListener("click",
+      function () { gmailbuttons.RemoveLabel(aLabel) }, false);
+    //delButton.setAttribute("command", "gmailbuttons-remove-label");    
     item.appendChild(delButton);
 
     return item;
@@ -557,12 +422,27 @@ var gmailbuttons = {
     folder = aMessage.folder;
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
 
-    uri = folder.fetchCustomMsgAttribute(aAttribute,
-      aMessage.messageKey, msgWindow);
+    uri = folder.fetchCustomMsgAttribute(aAttribute, aMessage.messageKey,
+        msgWindow);
+    uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
+    uri.RegisterListener(aUrlListener);
+  },
+  
+  IssueCommand: function (aMessage, aCommand, aExtraArgs, aUrlListener) {
+    var
+      folder,
+      uri;
+
+    folder = aMessage.folder;
+    folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+
+    uri = folder.issueCommandOnMsgs(aCommand, aMessage.messageKey + 
+      (aExtraArgs ? " " + aExtraArgs : ""), msgWindow);
     uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
     uri.RegisterListener(aUrlListener);
   },
 
+  // Fetches labels for currently selected message and updates UI
   FetchLabels : function () {
     var
       urlListener,
@@ -573,7 +453,7 @@ var gmailbuttons = {
       hbox;
 
     try {
-      // fetchCustomAttribute result is returned asyncronously so we have
+      // fetchCustomAttribute result is returned asyncronously so we have 
       // to create a listener to handle the result.
       urlListener = {
         OnStartRunningUrl: function (aUrl) {
@@ -637,6 +517,39 @@ var gmailbuttons = {
       } else {
         hbox.hidden = true;
       }
+    } catch (ex) {
+      alert(ex);
+    }
+  },
+  
+  // REmoves the specified label from the current message
+  RemoveLabel : function (aLabel) {
+    var
+      urlListener,
+      message,
+      i,
+      toolbar,
+      button,
+      hbox;
+
+    try {
+      // fetchCustomAttribute result is returned asyncronously so we have 
+      // to create a listener to handle the result.
+      urlListener = {
+        OnStartRunningUrl: function (aUrl) {
+          // don't do anything on start
+        },
+
+        OnStopRunningUrl: function (aUrl, aExitCode) {
+          aUrl.QueryInterface(Ci.nsIImapUrl);
+          debugger
+          gmailbuttons.FetchLabels();
+        }
+      };
+      
+      message = gFolderDisplay.selectedMessage;
+      this.IssueCommand(message, "STORE", "-X-GM-LABELS " + aLabel,
+        urlListener);      
     } catch (ex) {
       alert(ex);
     }
