@@ -4,43 +4,59 @@
 
   <!-- include required scripts -->
   <script src="gmailbuttonsOverlay.js"/>
-  
+
   <!-- include strings used in xul -->
   <stringbundleset id="stringbundleset">
     <stringbundle id="gmailbuttons-strings" src="chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties"/>
-  </stringbundleset>  
-    
+  </stringbundleset>
+
   <!-- additional toolbar for dispaying gmail labels in message header area -->
   <vbox id="expandedHeadersBox">
-    <hbox id="gmailbuttons-header-view" insertafter="expandedHeadersBottomBox" 
+    <hbox id="gmailbuttons-header-view" insertafter="expandedHeadersBottomBox"
       style="margin-bottom: 5px;">
-      <label id="gmailbuttons-labels-label" value="&gmailbuttonsLabels.label;" 
-        control="gmailbuttons-label-toolbox" style="padding-top: 3px;" />
-      <description id="gmailbuttons-labels-none" value="&gmailbuttonsLabels.none;" 
-        style="padding-top: 3px;" />
-      <toolbox id="gmailbuttons-label-toolbox"
-        class="inline-toolbox">
-        <toolbar id="gmailbuttons-label-toolbar">
-        </toolbar>
-      </toolbox>
+      <vbox>
+        <hbox>
+          <label id="gmailbuttons-messageId-label" value="&gmailbuttonsMessageId.label;"
+            style="padding-top: 3px;" />
+          <description id="gmailbuttons-messageId" value="&gmailbuttonsLabels.none;"
+            style="padding-top: 3px;" />
+        </hbox>
+        <hbox>
+          <label id="gmailbuttons-threadId-label" value="&gmailbuttonsThreadId.label;"
+            style="padding-top: 3px;" />
+          <description id="gmailbuttons-threadId" value="&gmailbuttonsLabels.none;"
+            style="padding-top: 3px;" />
+        </hbox>
+        <hbox>
+          <label id="gmailbuttons-labels-label" value="&gmailbuttonsLabels.label;"
+            control="gmailbuttons-label-toolbox" style="padding-top: 3px;" />
+          <description id="gmailbuttons-labels-none" value="&gmailbuttonsLabels.none;"
+            style="padding-top: 3px;" />
+          <toolbox id="gmailbuttons-label-toolbox"
+            class="inline-toolbox">
+            <toolbar id="gmailbuttons-label-toolbar">
+            </toolbar>
+          </toolbox>
+        </hbox>
+      </vbox>
     </hbox>
   </vbox>
-  
+
   <!-- additional gmail specific buttons -->
   <toolbar id="header-view-toolbar">
-    <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;" 
-      tooltiptext="&gmailbuttonsSpamButton.tooltip;" 
-	    class="toolbarbutton-1 msgHeaderView-button hdrJunkButton" 
+    <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;"
+      tooltiptext="&gmailbuttonsSpamButton.tooltip;"
+	    class="toolbarbutton-1 msgHeaderView-button hdrJunkButton"
 	    oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Junk, event);"
 	    removable="true"
     />
-    <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;" 
-      tooltiptext="&gmailbuttonsTrashButton.tooltip;" 
-      class="toolbarbutton-1 msgHeaderView-button" 
+    <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;"
+      tooltiptext="&gmailbuttonsTrashButton.tooltip;"
+      class="toolbarbutton-1 msgHeaderView-button"
       style="list-style-image: url('chrome://gmailbuttons/skin/icons/gmailbuttonsTrash.png')"
       oncommand="gmailbuttons.MoveToSpecialFolder(nsMsgFolderFlags.Trash, event);"
       removable="true"
-    />    
+    />
 	</toolbar>
-  
+
 </overlay>
