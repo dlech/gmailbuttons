@@ -2,5 +2,7 @@
 <!ENTITY gmailbuttonsTrashButton.tooltip "Move this message to the [Gmail]/Trash folder">
 <!ENTITY gmailbuttonsSpamButton.label "Spam">
 <!ENTITY gmailbuttonsSpamButton.tooltip "Move this message to the [Gmail]/Spam folder">
+<!ENTITY gmailbuttonsMessageId.label "Gmail Message ID:">
+<!ENTITY gmailbuttonsThreadId.label "Gmail Thread ID:">
 <!ENTITY gmailbuttonsLabels.label "Gmail Labels:">
 <!ENTITY gmailbuttonsLabels.none "None">

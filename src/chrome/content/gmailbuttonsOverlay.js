@@ -249,6 +249,8 @@ var gmailbuttons = {
     onEndHeaders: function () {
       gmailbuttons.updateJunkSpamButtons();
       gmailbuttons.FetchLabels();
+      gmailbuttons.UpdateMessageId();
+      gmailbuttons.UpdateThreadId();
     },
 
     onEndAttachments: function () {
@@ -369,18 +371,71 @@ var gmailbuttons = {
   // TODO may want error message here
   },
 
+  UpdateMessageId: function () {
+
+    var messageIdDescription = document.getElementById("gmailbuttons-messageId");
+    messageIdDescription.value = ""; // clear previous value
+
+    // TODO add a preference to show or hide this row
+
+    /* this is the callback for the FETCH X-GM-MSGID command */
+    var fetchXGmMsgidUrlListener = {
+      OnStartRunningUrl: function (aUrl) {
+        // don't do anything on start
+      },
+
+      OnStopRunningUrl: function (aUrl, aExitCode) {
+
+        aUrl.QueryInterface(Ci.nsIImapUrl);
+        var msgId = aUrl.customAttributeResult; // the Gmail message id
+        messageIdDescription.value = msgId;
+      }
+    };
+
+    gmailbuttons.FetchCustomAttribute(gFolderDisplay.selectedMessage,
+      "X-GM-MSGID", fetchXGmMsgidUrlListener);
+
+  },
+
+  UpdateThreadId: function () {
+
+    var threadIdDescription = document.getElementById("gmailbuttons-threadId");
+    threadIdDescription.value = ""; // clear previous value
+
+    // TODO add a preference to show or hide this row
+
+    /* this is the callback for the FETCH X-GM-THRID command */
+    var fetchXGmThridUrlListener = {
+      OnStartRunningUrl: function (aUrl) {
+        // don't do anything on start
+      },
+
+      OnStopRunningUrl: function (aUrl, aExitCode) {
+
+        aUrl.QueryInterface(Ci.nsIImapUrl);
+        var threadId = aUrl.customAttributeResult; // the Gmail thread id
+        threadIdDescription.value = threadId;
+
+      }
+    };
+
+    gmailbuttons.FetchCustomAttribute(gFolderDisplay.selectedMessage,
+        "X-GM-THRID", fetchXGmThridUrlListener);
+
+  },
+
   CreateMessageLabelButton : function (aId, aLabel) {
 
+  const XUL_NS =
+      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
     var
-      XUL_NS,
       item,
       labelForDisplay,
       labelLabel,
       deleteMsgFromFolder,
       delButton;
 
-    XUL_NS =
-      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
     // create a new XUL toolbarbutton
     item = document.createElementNS(XUL_NS, "label");
     item.setAttribute("id", aId);
@@ -427,7 +482,7 @@ var gmailbuttons = {
     uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
     uri.RegisterListener(aUrlListener);
   },
-  
+
   IssueCommand: function (aMessage, aCommand, aExtraArgs, aUrlListener) {
     var
       folder,
@@ -436,7 +491,7 @@ var gmailbuttons = {
     folder = aMessage.folder;
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
 
-    uri = folder.issueCommandOnMsgs(aCommand, aMessage.messageKey + 
+    uri = folder.issueCommandOnMsgs(aCommand, aMessage.messageKey +
       (aExtraArgs ? " " + aExtraArgs : ""), msgWindow);
     uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
     uri.RegisterListener(aUrlListener);
@@ -521,7 +576,7 @@ var gmailbuttons = {
       alert(ex);
     }
   },
-  
+
   // REmoves the specified label from the current message
   RemoveLabel : function (aLabel) {
     var
@@ -533,7 +588,7 @@ var gmailbuttons = {
       hbox;
 
     try {
-      // fetchCustomAttribute result is returned asyncronously so we have 
+      // fetchCustomAttribute result is returned asyncronously so we have
       // to create a listener to handle the result.
       urlListener = {
         OnStartRunningUrl: function (aUrl) {
@@ -546,10 +601,10 @@ var gmailbuttons = {
           gmailbuttons.FetchLabels();
         }
       };
-      
+
       message = gFolderDisplay.selectedMessage;
       this.IssueCommand(message, "STORE", "-X-GM-LABELS " + aLabel,
-        urlListener);      
+        urlListener);
     } catch (ex) {
       alert(ex);
     }
