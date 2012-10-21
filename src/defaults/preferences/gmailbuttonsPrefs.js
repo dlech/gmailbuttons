@@ -3,5 +3,6 @@
 
 pref("extensions.gmailbuttons.showDeleteButton", false);
 pref("extensions.gmailbuttons.hideJunkStatusCol", false);
+pref("extensions.gmailbuttons.showGmailInfo", false);
 // https://developer.mozilla.org/en/Localizing_extension_descriptions
 //pref("extensions.gmailbuttons.description", "chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties");

@@ -28,6 +28,10 @@ var gmailbuttons = {
     case "showDeleteButton":
       this.updateJunkSpamButtons();
       break;
+    case "showGmailInfo":
+      this.UpdateMessageId();
+      this.UpdateThreadId();
+      break;
     }
   },
 
@@ -372,19 +376,33 @@ var gmailbuttons = {
   },
 
   UpdateMessageId: function () {
-
+   
+    var messageIdLabel = document.getElementById("gmailbuttons-messageId-label");
     var messageIdDescription = document.getElementById("gmailbuttons-messageId");
-    messageIdDescription.value = gFolderDisplay.selectedMessage.getStringProperty("X-GM-MSGID");
 
-    // TODO add a preference to show or hide this row
+    if (gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
+      messageIdLabel.hidden = false;
+      messageIdDescription.hidden = false;
+      messageIdDescription.value = gFolderDisplay.selectedMessage.getStringProperty("X-GM-MSGID");
+    } else {
+      messageIdLabel.hidden = true;
+      messageIdDescription.hidden = true;
+    }
   },
 
   UpdateThreadId: function () {
-
+    
+    var threadIdLabel = document.getElementById("gmailbuttons-threadId-label");
     var threadIdDescription = document.getElementById("gmailbuttons-threadId");
-    threadIdDescription.value = gFolderDisplay.selectedMessage.getStringProperty("X-GM-THRID");
-
-    // TODO add a preference to show or hide this row    
+    
+    if (gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
+      threadIdLabel.hidden = false;
+      threadIdDescription.hidden = false;
+      threadIdDescription.value = gFolderDisplay.selectedMessage.getStringProperty("X-GM-THRID");
+    } else {
+      threadIdLabel.hidden = true;
+      threadIdDescription.hidden = true;
+    }
   },
 
   CreateMessageLabelButton : function (aId, aLabel) {
