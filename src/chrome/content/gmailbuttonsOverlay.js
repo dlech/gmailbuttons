@@ -32,6 +32,9 @@ var gmailbuttons = {
       this.UpdateMessageId();
       this.UpdateThreadId();
       break;
+    case "showGmailLabels":
+      this.UpdateLabels();
+      break;
     }
   },
 
@@ -252,7 +255,7 @@ var gmailbuttons = {
 
     onEndHeaders: function () {
       gmailbuttons.updateJunkSpamButtons();
-      gmailbuttons.FetchLabels();
+      gmailbuttons.UpdateLabels();
       gmailbuttons.UpdateMessageId();
       gmailbuttons.UpdateThreadId();
     },
@@ -479,7 +482,7 @@ var gmailbuttons = {
   },
 
   // Fetches labels for currently selected message and updates UI
-  FetchLabels : function () {
+  UpdateLabels : function () {
     var
       urlListener,
       message,
@@ -546,7 +549,8 @@ var gmailbuttons = {
 
       hbox = document.getElementById("gmailbuttons-header-view");
       // only show gmail labels if we are in a gmail account
-      if (this.IsServerGmailIMAP(this.GetMessageServer())) {
+      if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
+          this.extPrefs.getBoolPref("showGmailLabels")) {
         hbox.hidden = false;
         message = gFolderDisplay.selectedMessage;
         this.FetchCustomAttribute(message, "X-GM-LABELS", urlListener);
@@ -579,7 +583,7 @@ var gmailbuttons = {
         OnStopRunningUrl: function (aUrl, aExitCode) {
           aUrl.QueryInterface(Ci.nsIImapUrl);
           debugger
-          gmailbuttons.FetchLabels();
+          gmailbuttons.UpdateLabels();
         }
       };
 
