@@ -396,7 +396,8 @@ var gmailbuttons = {
     var messageIdLabel = document.getElementById("gmailbuttons-messageId-label");
     var messageIdDescription = document.getElementById("gmailbuttons-messageId");
 
-    if (gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
+    if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
+        gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       messageIdLabel.hidden = false;
       messageIdDescription.hidden = false;
       messageIdDescription.value = ""; // clear previous value
@@ -426,7 +427,8 @@ var gmailbuttons = {
     var threadIdLabel = document.getElementById("gmailbuttons-threadId-label");
     var threadIdDescription = document.getElementById("gmailbuttons-threadId");
 
-    if (gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
+    if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
+        gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       threadIdLabel.hidden = false;
       threadIdDescription.hidden = false;
       threadIdDescription.value = ""; // clear previous value
