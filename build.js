@@ -47,7 +47,12 @@ if (true) {
   // delete existing target folder to get rid of old files
   if (fso.FolderExists(targetFolder)) {
     fso.DeleteFolder(targetFolder);
+    // give it a time to delete
+    while (fso.FolderExists(targetFolder)) {
+      WScript.sleep(100);      
+    }  
   }
+  
   // create new empty folder
   fso.CreateFolder(targetFolder);
   
