@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://gmailbuttons/content/gmailbuttons.css" type="text/css"?>
 <!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOverlay.dtd">
 <overlay id="gmailbuttons-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
@@ -11,36 +12,23 @@
   </stringbundleset>
 
   <!-- additional toolbar for dispaying gmail labels in message header area -->
-  <vbox id="expandedHeadersBox">
-    <hbox id="gmailbuttons-header-view" insertafter="expandedHeadersBottomBox"
-      style="margin-bottom: 5px;">
-      <vbox>
-        <hbox>
-          <label id="gmailbuttons-messageId-label" value="&gmailbuttonsMessageId.label;"
-            style="padding-top: 3px;" />
-          <description id="gmailbuttons-messageId" value="&gmailbuttonsLabels.none;"
-            style="padding-top: 3px;" />
-        </hbox>
-        <hbox>
-          <label id="gmailbuttons-threadId-label" value="&gmailbuttonsThreadId.label;"
-            style="padding-top: 3px;" />
-          <description id="gmailbuttons-threadId" value="&gmailbuttonsLabels.none;"
-            style="padding-top: 3px;" />
-        </hbox>
-        <hbox>
-          <label id="gmailbuttons-labels-label" value="&gmailbuttonsLabels.label;"
-            control="gmailbuttons-label-toolbox" style="padding-top: 3px;" />
-          <description id="gmailbuttons-labels-none" value="&gmailbuttonsLabels.none;"
-            style="padding-top: 3px;" />
-          <toolbox id="gmailbuttons-label-toolbox"
-            class="inline-toolbox">
-            <toolbar id="gmailbuttons-label-toolbar">
-            </toolbar>
-          </toolbox>
-        </hbox>
-      </vbox>
-    </hbox>
-  </vbox>
+  <rows id="expandedHeader2Rows">
+    <row id="gmailbuttons-messageId-row">
+      <label id="gmailbuttons-messageId-label" value="&gmailbuttonsMessageId.label;"
+        class="headerName" control="gmailbuttons-messageId" />
+      <mail-headerfield id="gmailbuttons-messageId" flex="1" />
+    </row>
+    <row id="gmailbuttons-threadId-row">
+      <label id="gmailbuttons-threadId-label" value="&gmailbuttonsThreadId.label;"
+        class="headerName" control="gmailbuttons-threadId" />
+      <mail-headerfield id="gmailbuttons-threadId" flex="1" />
+    </row>
+    <row id="gmailbuttons-labels-row">
+      <label id="gmailbuttons-labels-label" value="&gmailbuttonsLabels.label;"
+        control="gmailbuttons-labels" class="headerName" />
+      <gmailbuttons-mail-headerfield-labels id="gmailbuttons-labels" flex="1" />
+    </row>
+  </rows>
 
   <!-- additional gmail specific buttons -->
   <toolbar id="header-view-toolbar">

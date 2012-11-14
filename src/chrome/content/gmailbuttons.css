@@ -1,0 +1,3 @@
+gmailbuttons-mail-headerfield-labels {
+  -moz-binding: url("chrome://gmailbuttons/content/gmailbuttons.xml#gmailbuttons-mail-headerfield-labels");
+}

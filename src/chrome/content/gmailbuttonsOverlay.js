@@ -381,32 +381,32 @@ var gmailbuttons = {
   UpdateMessageId: function () {
    
     var messageIdLabel = document.getElementById("gmailbuttons-messageId-label");
-    var messageIdDescription = document.getElementById("gmailbuttons-messageId");
+    var messageIdValue = document.getElementById("gmailbuttons-messageId");
 
     if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       messageIdLabel.hidden = false;
-      messageIdDescription.hidden = false;
-      messageIdDescription.value = gFolderDisplay.selectedMessage.getStringProperty("X-GM-MSGID");
+      messageIdValue.hidden = false;
+      messageIdValue.headerValue = gFolderDisplay.selectedMessage.getStringProperty("X-GM-MSGID");
     } else {
       messageIdLabel.hidden = true;
-      messageIdDescription.hidden = true;
+      messageIdValue.hidden = true;
     }
   },
 
   UpdateThreadId: function () {
-    
+
     var threadIdLabel = document.getElementById("gmailbuttons-threadId-label");
-    var threadIdDescription = document.getElementById("gmailbuttons-threadId");
+    var threadIdValue = document.getElementById("gmailbuttons-threadId");
     
     if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       threadIdLabel.hidden = false;
-      threadIdDescription.hidden = false;
-      threadIdDescription.value = gFolderDisplay.selectedMessage.getStringProperty("X-GM-THRID");
+      threadIdValue.hidden = false;
+      threadIdValue.headerValue =  gFolderDisplay.selectedMessage.getStringProperty("X-GM-THRID");
     } else {
       threadIdLabel.hidden = true;
-      threadIdDescription.hidden = true;
+      threadIdValue.hidden = true;
     }
   },
 
@@ -490,8 +490,7 @@ var gmailbuttons = {
       message,
       i,
       toolbar,
-      button,
-      hbox;
+      button;
 
     try {
       // fetchCustomAttribute result is returned asyncronously so we have
@@ -505,10 +504,9 @@ var gmailbuttons = {
           var
             labels,
             reg,
-            toolbar,
+            labelsElement,
             i,
-            button,
-            noneDesc;
+            button;
 
           aUrl.QueryInterface(Ci.nsIImapUrl);
           // only add labels to ui if message has not changed
@@ -521,58 +519,46 @@ var gmailbuttons = {
                 (labels.lastIndexOf(")") == (labels.length - 1))) {
               labels = labels.substring(1, labels.length - 1);
             }
-            // split on spaces that are not within quotes
-            // thank you http://stackoverflow.com/a/6464500
-            reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
-            labels = labels.split(reg);
-            toolbar = document.getElementById("gmailbuttons-label-toolbar");
-            for (i = 0; i < labels.length; i++) {
-              if (labels[i].length == 0) {
-                break;
-              }
-              button = gmailbuttons.
-                CreateMessageLabelButton("gmailbuttons-label" + i, labels[i]);
-              toolbar.appendChild(button);
+            if (labels.length == 0) {
+              labels = gmailbuttons.strings.getString("gmailbuttons.none");
+            } else {
+              // split on spaces that are not within quotes
+              // thank you http://stackoverflow.com/a/6464500
+              reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
+              labels = labels.split(reg);
             }
-            // show "None" if there are no labels
-            noneDesc = document.getElementById("gmailbuttons-labels-none");
-            noneDesc.hidden = (i > 0);
+            labelsElement = document.getElementById("gmailbuttons-labels");
+            labelsElement.headerValue = labels;
           }
         }
       };
 
       /* remove existing label buttons */
-      i = 0;
-      toolbar = document.getElementById("gmailbuttons-label-toolbar");
-      while (button = document.getElementById("gmailbuttons-label" + i)) {
-        toolbar.removeChild(button);
-        i++;
-      }
-
-      hbox = document.getElementById("gmailbuttons-header-view");
+      labelsElement = document.getElementById("gmailbuttons-labels");
+      labelsElement.headerValue = null;
+      
       // only show gmail labels if we are in a gmail account
+      var labelsRow = document.getElementById("gmailbuttons-labels-row");
       if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
           this.extPrefs.getBoolPref("showGmailLabels")) {
-        hbox.hidden = false;
+        labelsRow.hidden = false;
         message = gFolderDisplay.selectedMessage;
         this.FetchCustomAttribute(message, "X-GM-LABELS", urlListener);
       } else {
-        hbox.hidden = true;
+        labelsRow.hidden = true;
       }
     } catch (ex) {
       alert(ex);
     }
   },
 
-  // REmoves the specified label from the current message
+  // Removes the specified label from the current message
   RemoveLabel : function (aLabel) {
     var
       urlListener,
       message,
-      i,
       toolbar,
-      button,
-      hbox;
+      button;
 
     try {
       // fetchCustomAttribute result is returned asyncronously so we have
@@ -583,8 +569,6 @@ var gmailbuttons = {
         },
 
         OnStopRunningUrl: function (aUrl, aExitCode) {
-          aUrl.QueryInterface(Ci.nsIImapUrl);
-          debugger
           gmailbuttons.UpdateLabels();
         }
       };

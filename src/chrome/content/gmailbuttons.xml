@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<bindings id="gmailbuttonsBindings"
+          xmlns="http://www.mozilla.org/xbl"
+          xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+          xmlns:nc="http://home.netscape.com/NC-rdf#"
+          xmlns:xbl="http://www.mozilla.org/xbl">
+  <!-- based on https://mxr.mozilla.org/comm-central/source/mail/base/content/mailWidgets.xml -->        
+          
+  <!-- Header field for showing gmail labels -->
+  <binding id="gmailbuttons-mail-headerfield-labels">
+    <content>
+     <xul:label class="headerValue" anonid="headerValue" flex="1"/>
+    </content>
+
+    <implementation>
+      <property name="headerValue" onset="return this.buildLables(val);"/>
+      <method name="buildLables">
+        <parameter name="aLabels"/>
+        <body>
+          <![CDATA[
+            // aLabels contains a string with a message or an array of label names
+
+            // remove any existing tag items we've appended to the list
+            var headerValueNode =
+                document.getAnonymousElementByAttribute(this, 'anonid', 'headerValue');
+            for (var i = headerValueNode.childNodes.length - 1; i >= 0; --i)
+              headerValueNode.removeChild(headerValueNode.childNodes[i]);
+
+            // for strings, just display string in a label
+            if (typeof(aLabels) === "string") {
+              var label = document.createElement("label");
+              label.setAttribute('value', aLabels);
+              headerValueNode.appendChild(label);
+              return;
+            }
+            // check for array object
+            if (!Array.isArray(aLabels)) {
+              return;
+            }
+            // iterate array
+            for (var index = 0; index < aLabels.length; index++)
+            {
+              // for each label, create a label element and append it.
+              var labelName = aLabels[index];
+              // strip enclosing quotes if present
+              if ((labelName.indexOf("\"") == 0) &&
+                  (labelName.lastIndexOf("\"") == (labelName.length - 1))) {
+                labelName = labelName.substring(1, labelName.length - 1);
+              }
+              // strip leading backslashes if present (on special folders)
+              if (labelName.indexOf("\\\\") == 0) {
+                labelName = labelName.substring(2);
+              }
+              var label = document.createElement("label");
+              label.setAttribute('value', labelName);
+              headerValueNode.appendChild(label);
+            }
+        ]]>
+        </body>
+      </method>
+    </implementation>
+  </binding>
+</bindings>
