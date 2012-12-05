@@ -379,7 +379,7 @@ var gmailbuttons = {
   },
 
   UpdateMessageId: function () {
-   
+
     var messageIdLabel = document.getElementById("gmailbuttons-messageId-label");
     var messageIdValue = document.getElementById("gmailbuttons-messageId");
 
@@ -398,7 +398,7 @@ var gmailbuttons = {
 
     var threadIdLabel = document.getElementById("gmailbuttons-threadId-label");
     var threadIdValue = document.getElementById("gmailbuttons-threadId");
-    
+
     if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       threadIdLabel.hidden = false;
@@ -485,65 +485,97 @@ var gmailbuttons = {
 
   // Fetches labels for currently selected message and updates UI
   UpdateLabels : function () {
-    var
-      urlListener,
-      message,
-      i,
-      toolbar,
-      button;
 
     try {
-      // fetchCustomAttribute result is returned asyncronously so we have
-      // to create a listener to handle the result.
-      urlListener = {
-        OnStartRunningUrl: function (aUrl) {
-          // don't do anything on start
-        },
-
-        OnStopRunningUrl: function (aUrl, aExitCode) {
-          var
-            labels,
-            reg,
-            labelsElement,
-            i,
-            button;
-
-          aUrl.QueryInterface(Ci.nsIImapUrl);
-          // only add labels to ui if message has not changed
-          // since call was made
-          if (gFolderDisplay.selectedMessage.messageKey ==
-              aUrl.listOfMessageIds) {
-            labels = gFolderDisplay.selectedMessage.getStringProperty("X-GM-LABELS");
-            // trim parenthensis
-            if ((labels.indexOf("(") == 0) &&
-                (labels.lastIndexOf(")") == (labels.length - 1))) {
-              labels = labels.substring(1, labels.length - 1);
-            }
-            if (labels.length == 0) {
-              labels = gmailbuttons.strings.getString("gmailbuttons.none");
-            } else {
-              // split on spaces that are not within quotes
-              // thank you http://stackoverflow.com/a/6464500
-              reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
-              labels = labels.split(reg);
-            }
-            labelsElement = document.getElementById("gmailbuttons-labels");
-            labelsElement.headerValue = labels;
-          }
-        }
-      };
-
       /* remove existing label buttons */
       labelsElement = document.getElementById("gmailbuttons-labels");
       labelsElement.headerValue = null;
-      
+
       // only show gmail labels if we are in a gmail account
       var labelsRow = document.getElementById("gmailbuttons-labels-row");
-      if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
+      var server = this.GetMessageServer();
+      if (this.IsServerGmailIMAP(server) &&
           this.extPrefs.getBoolPref("showGmailLabels")) {
         labelsRow.hidden = false;
-        message = gFolderDisplay.selectedMessage;
-        this.FetchCustomAttribute(message, "X-GM-LABELS", urlListener);
+        var message = gFolderDisplay.selectedMessage;
+        if (!this.tcpSocket)
+          this.tcpSocket = new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
+        var socket = this.tcpSocket.open(server.realHostName, server.port, { useSSL: true });
+        socket.ondata = function (aEvent) {
+          if (typeof aEvent.data === "string") {
+            // response starts with '* OK'
+            if (aEvent.data.search(/^\* OK/i) == 0) {
+              socket.ondata = function (aEvent) {
+                if (aEvent.data.search(/1 OK/i) >= 0) {
+                  socket.ondata = function (aEvent) {
+                    if (aEvent.data.search(/2 OK/i) >= 0) {
+                     socket.ondata = function (aEvent) {
+                        if (aEvent.data.search(/3 OK/i) >= 0) {
+                          socket.ondata = function (aEvent) {
+                            var labels;
+                            if (aEvent.data.search(/4 OK/i) >= 0) {
+                              labels = aEvent.data.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
+                              if (labels) {
+                                if (labels.length <= 0) {
+                                  labels = new Array();
+                                } else {
+                                  // split on spaces that are not within quotes
+                                  // thank you http://stackoverflow.com/a/6464500
+                                  reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
+                                  labels = labels[1].split(reg);
+                                }
+                                if (specialFolder) {
+                                  labels.unshift("\\" + specialFolder);
+                                } else {
+                                  labels.unshift(gFolderDisplay.selectedMessage.folder.onlineName);
+                                }
+                                // remove starred since thunderbird ui already handles it in a different way
+                                // TODO may want to make showing Starred optional
+                                var starredPos = labels.indexOf("\"\\\\Starred\"");
+                                if (starredPos >= 0) {
+                                  labels.splice(1, starredPos);
+                                }
+                              }
+                            }
+                            if (!labels) {
+                              labels = gmailbuttons.strings.getString("gmailbuttons.error");;
+                            }
+                            labelsElement = document.getElementById("gmailbuttons-labels");
+                            labelsElement.headerValue = labels;
+                            socket.close();
+                          }
+                          // this is one of gmails special folders
+                          var specialFolder =
+                            aEvent.data.match(/\\Inbox|\\AllMail|\\Drafts|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+                          var messageId = message.messageKey + ":" + message.messageKey;
+                          socket.send("4 uid fetch " + messageId + " (X-GM-LABELS)\r\n");
+                          return;
+                        }
+                        alert("closing socket4\n\n" + aEvent.data);
+                        socket.close();
+                      }
+                      var messageId = message.messageKey + ":" + message.messageKey;
+                      socket.send("3 xlist \"\" \"" + message.folder.onlineName + "\"\r\n");
+                      return;
+                    }
+                    alert("closing socket3\n\n" + aEvent.data);
+                    socket.close();
+                  }
+                  socket.send("2 select \"" + message.folder.onlineName + "\"\r\n");
+                  return;
+                }
+                alert("closing socket2\n\n" + aEvent.data);
+                socket.close();
+              }
+              return;
+            }
+          }
+          alert("closing socket1\n\n" + aEvent.data);
+          socket.close();
+        };
+        socket.onopen = function () {
+          socket.send("1 login " + server.realUsername + " " + server.password + "\r\n");
+        }
       } else {
         labelsRow.hidden = true;
       }

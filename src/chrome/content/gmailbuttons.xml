@@ -4,8 +4,8 @@
           xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
           xmlns:nc="http://home.netscape.com/NC-rdf#"
           xmlns:xbl="http://www.mozilla.org/xbl">
-  <!-- based on https://mxr.mozilla.org/comm-central/source/mail/base/content/mailWidgets.xml -->        
-          
+  <!-- based on https://mxr.mozilla.org/comm-central/source/mail/base/content/mailWidgets.xml -->
+
   <!-- Header field for showing gmail labels -->
   <binding id="gmailbuttons-mail-headerfield-labels">
     <content>
@@ -42,18 +42,36 @@
             {
               // for each label, create a label element and append it.
               var labelName = aLabels[index];
+              if (!labelName)
+                continue;
+              prettyLabelName = labelName;
               // strip enclosing quotes if present
-              if ((labelName.indexOf("\"") == 0) &&
-                  (labelName.lastIndexOf("\"") == (labelName.length - 1))) {
-                labelName = labelName.substring(1, labelName.length - 1);
+              if ((prettyLabelName.indexOf("\"") == 0) &&
+                  (prettyLabelName.lastIndexOf("\"") == (prettyLabelName.length - 1))) {
+                prettyLabelName = prettyLabelName.substring(1, prettyLabelName.length - 1);
               }
               // strip leading backslashes if present (on special folders)
-              if (labelName.indexOf("\\\\") == 0) {
-                labelName = labelName.substring(2);
+              if (prettyLabelName.indexOf("\\\\") == 0) {
+                prettyLabelName = prettyLabelName.substring(2);
               }
+
               var label = document.createElement("label");
-              label.setAttribute('value', labelName);
-              headerValueNode.appendChild(label);
+              label.setAttribute('value', prettyLabelName);
+              label.setAttribute('class', 'gmailbuttonsLabel');
+
+              var deleteButton = document.createElement("label");
+              deleteButton.setAttribute('value', '(x)');
+              deleteButton.setAttribute('class', 'gmailbuttonsLabelDeleteButton gmailbuttonsLabel');
+              deleteButton.setAttribute('style', 'padding-left: 2px;');
+              deleteButton.setAttribute('labelName', labelName);
+              deleteButton.labelName = labelName;
+              deleteButton.setAttribute('onclick', 'gmailbuttons.RemoveLabel(this.labelName)');
+
+              var labelBox = document.createElement("hbox");
+              labelBox.setAttribute('class', 'tagvalue');
+              labelBox.appendChild(label);
+              labelBox.appendChild(deleteButton);
+              headerValueNode.appendChild(labelBox);
             }
         ]]>
         </body>

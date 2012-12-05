@@ -1,3 +1,16 @@
 gmailbuttons-mail-headerfield-labels {
   -moz-binding: url("chrome://gmailbuttons/content/gmailbuttons.xml#gmailbuttons-mail-headerfield-labels");
 }
+
+.gmailbuttonsLabel {
+  padding: 0px;
+  margin: 0px;
+}
+
+.gmailbuttonsLabelDeleteButton {
+  font-family:monospace;
+}
+
+.gmailbuttonsLabelDeleteButton:hover {
+  font-weight:bold;
+}
