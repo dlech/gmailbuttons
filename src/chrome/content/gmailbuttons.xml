@@ -9,7 +9,7 @@
   <!-- Header field for showing gmail labels -->
   <binding id="gmailbuttons-mail-headerfield-labels">
     <content>
-     <xul:label class="headerValue" anonid="headerValue" flex="1"/>
+     <xul:label class="headerValue" anonid="headerValue" flex="1" />
     </content>
 
     <implementation>
@@ -61,16 +61,16 @@
               label.setAttribute('value', prettyLabelName);
               label.setAttribute('class', 'gmailbuttonsLabel');
 
-              var deleteButton = document.createElement("label");
-              deleteButton.setAttribute('value', '(x)');
+              var deleteButton = document.createElement("toolbarbutton");
               deleteButton.setAttribute('class', 'gmailbuttonsLabelDeleteButton gmailbuttonsLabel');
               deleteButton.setAttribute('style', 'padding-left: 2px;');
               deleteButton.setAttribute('labelName', labelName);
+              deleteButton.setAttribute('tooltiptext', gmailbuttons.strings.getString("gmailbuttons.removeLabel"));
               deleteButton.labelName = labelName;
               deleteButton.setAttribute('onclick', 'gmailbuttons.RemoveLabel(this.labelName)');
 
               var labelBox = document.createElement("hbox");
-              labelBox.setAttribute('class', 'tagvalue');
+              labelBox.setAttribute('class', 'tagvalue gmailbuttonsTagvalue');
               labelBox.appendChild(label);
               labelBox.appendChild(deleteButton);
               headerValueNode.appendChild(labelBox);

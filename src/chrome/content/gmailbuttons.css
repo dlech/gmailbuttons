@@ -7,10 +7,22 @@ gmailbuttons-mail-headerfield-labels {
   margin: 0px;
 }
 
+.gmailbuttonsTagvalue {
+  margin-right: 5px;
+}
+
 .gmailbuttonsLabelDeleteButton {
-  font-family:monospace;
+  -moz-appearance: none;
+  -moz-image-region: rect(0, 64px, 16px, 48px);
+  border: none;
+  padding: 0px;
+  list-style-image: url("chrome://global/skin/icons/close.png");
 }
 
 .gmailbuttonsLabelDeleteButton:hover {
-  font-weight:bold;
+  -moz-image-region: rect(0, 32px, 16px, 16px);
+}
+
+.gmailbuttonsLabelDeleteButton:active {
+  -moz-image-region: rect(0, 48px, 16px, 32px);
 }

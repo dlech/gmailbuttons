@@ -134,7 +134,6 @@ var gmailbuttons = {
       serverPrefs = Components.classes["@mozilla.org/preferences-service;1"]
           .getService(Components.interfaces.nsIPrefService)
           .getBranch("mail.server." + server.key + ".");
-      debugger
       /* get actual folder names from server  */
       try {
         serverRootFolder = server.rootFolder;
@@ -339,7 +338,7 @@ var gmailbuttons = {
                       var newFolder = {};
                       // this is one of gmails special folders
                       var flag =
-                        lines[i].match(/\\Inbox|\\AllMail|\\Drafts|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+                        lines[i].match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
                       if (flag) {
                         var match = lines[i].match(/XLIST \([^\(]*\) "." "?([^"]*)"?/i);
                         if (match.length > 1) {
@@ -515,7 +514,7 @@ var gmailbuttons = {
                           };
                           // this is one of gmails special folders
                           var specialFolder =
-                            aEvent.data.match(/\\Inbox|\\AllMail|\\Drafts|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+                            aEvent.data.match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
                           var messageId = message.messageKey + ":" + message.messageKey;
                           socket.send("4 UID FETCH " + messageId + " (X-GM-LABELS)\r\n");
                           return;
