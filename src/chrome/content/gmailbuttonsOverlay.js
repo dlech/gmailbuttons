@@ -268,39 +268,6 @@ var gmailbuttons = {
     }
   },
 
-  folderDisplayListener: {
-    onMessagesLoaded: function (aAll) {
-
-      var
-        hideJunkStatusCol,
-        server,
-        junkStatusColumn;
-
-      try {
-        hideJunkStatusCol = gmailbuttons.extPrefs.getBoolPref("hideJunkStatusCol");
-        // don't need to do anything if pref doesn't exist or is false
-        if (!hideJunkStatusCol) {
-          return;
-        }
-        // get the server from the selected folder
-        server = aAll.displayedFolder.server;
-        if (!server) {
-          return;
-        }
-        if (gmailbuttons.IsServerGmailIMAP(server)) {
-          // hide junk status column
-          junkStatusColumn = document.getElementById("junkStatusCol");
-          if (junkStatusColumn) {
-            junkStatusColumn.hidden = true;
-          }
-        }
-      } catch (ex) {
-        // preference does not exist - do nothing
-        //alert(ex);
-      }
-    }
-  },
-
   onBeforeCustomization: function (aEvent) {
     if (aEvent.target.id == "header-view-toolbox") {
       gmailbuttons.showAllButtons();
@@ -601,5 +568,3 @@ window.addEventListener("aftercustomization",
   function (e) { gmailbuttons.onAfterCustomization(e); }, false);
 // listen for messages loading
 gMessageListeners.push(gmailbuttons.messageListener);
-// listen for folder selection
-FolderDisplayListenerManager.registerListener(gmailbuttons.folderDisplayListener);

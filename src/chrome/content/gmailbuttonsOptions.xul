@@ -2,7 +2,6 @@
 <!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOptions.dtd">
 <vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <setting pref="extensions.gmailbuttons.showDeleteButton" type="bool" title="&gmailbuttons.showDeleteButtonPref;" />
-  <setting pref="extensions.gmailbuttons.hideJunkStatusCol" type="bool" title="&gmailbuttons.hideJunkStatusColPref;" />
   <setting pref="extensions.gmailbuttons.showGmailInfo" type="bool" title="&gmailbuttons.showGmailInfoPref;" />
   <setting pref="extensions.gmailbuttons.showGmailLabels" type="bool" title="&gmailbuttons.showGmailLabelsPref;" />
 </vbox>
