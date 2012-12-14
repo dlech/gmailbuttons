@@ -1,6 +1,9 @@
 
 var gmailbuttons = {
 
+  // used to store special folder mappings for each account
+  SpecialFolderMap : {},
+
   onLoad: function () {
     // initialization code
     this.initialized = true;
@@ -54,6 +57,8 @@ var gmailbuttons = {
     if (!folder) { // message not in folder somehow?
       return;
     }
+    folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+    folder.QueryInterface(Ci.nsIMsgFolder);
     return folder;
   },
 
@@ -98,7 +103,6 @@ var gmailbuttons = {
       spamButton,
       server,
       serverPrefs,
-      thisFolder,
       serverRootFolder,
       trashFolder,
       spamFolder,
@@ -116,48 +120,48 @@ var gmailbuttons = {
     junkButton = document.getElementById("hdrJunkButton");
     spamButton = document.getElementById("gmailbuttons-spam-button");
 
-    server = this.GetMessageServer();
+    server = gmailbuttons.GetMessageServer();
 
-    if (this.IsServerGmailIMAP(server)) {
+    if (gmailbuttons.IsServerGmailIMAP(server)) {
       // this is a Gmail imap account
 
-        // also look at mail.server prefs
+      if (!gmailbuttons.SpecialFolderMap[server.key]) {
+        gmailbuttons.getSpecialFolders(server, gmailbuttons.updateJunkSpamButtons);
+        return;
+      }
+
+      // also look at mail.server prefs
       serverPrefs = Components.classes["@mozilla.org/preferences-service;1"]
           .getService(Components.interfaces.nsIPrefService)
           .getBranch("mail.server." + server.key + ".");
-
-      thisFolder = this.GetMessageFolder();
-      isTrashFolder = thisFolder.isSpecialFolder(Ci.nsMsgFolderFlags.Trash) ||
-          (serverPrefs.prefHasUserValue("trash_folder_name") &&
-          serverPrefs.getCharPref("trash_folder_name") == thisFolder.onlineName);
-      isSpamFolder = thisFolder.isSpecialFolder(Ci.nsMsgFolderFlags.Junk);
-
+      debugger
       /* get actual folder names from server  */
       try {
         serverRootFolder = server.rootFolder;
-        trashFolder = this.getSpecialFolder(serverRootFolder,
-            nsMsgFolderFlags.Trash);
-        spamFolder = this.getSpecialFolder(serverRootFolder,
-          nsMsgFolderFlags.Junk);
+        trashFolder = gmailbuttons.SpecialFolderMap[server.key]["\\Trash"].imapFolder;
+        spamFolder = gmailbuttons.SpecialFolderMap[server.key]["\\Spam"].imapFolder;
+        var thisFolder = gmailbuttons.GetMessageFolder();
+        isTrashFolder = trashFolder.URI == thisFolder.URI;
+        isSpamFolder = spamFolder.URI == thisFolder.URI;
       } catch (ex) {
         // don't need to do anything here
         //alert(ex);
       }
       /* get label text */
       trashLabel = trashFolder ? trashFolder.prettiestName :
-          this.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.getString("gmailbuttons.error");
       spamLabel = spamFolder ? spamFolder.prettiestName :
-          this.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.getString("gmailbuttons.error");
 
       /* get tooltip text */
       trashTooltip = trashFolder ?
-          this.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+          gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
             [trashFolder.URI.replace(serverRootFolder.URI, "").substr(1)], 1) :
-          this.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.getString("gmailbuttons.error");
       spamTooltip = spamFolder ?
-          this.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+          gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
             [spamFolder.URI.replace(serverRootFolder.URI, "").substr(1)], 1) :
-          this.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.getString("gmailbuttons.error");
 
       if (deleteButton) {
         // save the original tooltip - this only runs once
@@ -166,17 +170,17 @@ var gmailbuttons = {
         }
         // apply new tooltip
         if (isTrashFolder || isSpamFolder) {
-          deleteButton.tooltipText = this.strings.getString(
+          deleteButton.tooltipText = gmailbuttons.strings.getString(
             "gmailbuttons.deleteButton.trashSpam.tooltip"
           );
         } else {
-          deleteButton.tooltipText = this.strings.getString(
+          deleteButton.tooltipText = gmailbuttons.strings.getString(
             "gmailbuttons.deleteButton.regular.tooltip"
           );
         }
 
         try {
-          showDelete = this.extPrefs.getBoolPref("showDeleteButton");
+          showDelete = gmailbuttons.extPrefs.getBoolPref("showDeleteButton");
           deleteButton.hidden = (!showDelete) &&
             !(isTrashFolder || isSpamFolder);
         } catch (ex) {
@@ -310,52 +314,70 @@ var gmailbuttons = {
     }
   },
 
-  // search for folder flagged as a special folder. i.e. Trash and Spam folders
-  getSpecialFolder: function (aFolder, aFlag) {
-
-    var
-      subfolders,
-      subfolder,
-      result,
-      server,
-      serverPrefs,
-      nsMsgFolderFlags;
-
-    /* TODO would be nice if we could do this directly using XPATH */
-
-
-    /* for now, we use recurstion to search folders instead */
-
-    // make sure we have a valid folder
-    if (!(aFolder instanceof Ci.nsIMsgFolder)) {
-      return;
-    }
-    // if aFolder is flagged with aFlag, return it
-    if (aFolder.isSpecialFolder(aFlag)) {
-      return aFolder;
-    }
-    // otherwise, search recursivly
-    if (aFolder.hasSubFolders) {
-      subfolders = aFolder.subFolders;
-      while (subfolders.hasMoreElements()) {
-        subfolder = subfolders.getNext();
-        result = this.getSpecialFolder(subfolder, aFlag);
-        if (result) {
-          return result;
+  /** Use XLIST to create map of special folders for specified server.
+   * executes (optional) aCallback when finished */
+  getSpecialFolders: function (aServer, aCallback) {
+    aServer.QueryInterface(Ci.nsIMsgIncomingServer);
+    if (!this.SpecialFolderMap[aServer.key]) {
+      var newServer = {};
+      // TODO extract socket stuff to function
+      if (!this.tcpSocket) {
+        this.tcpSocket = new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
+      }
+      var socket = this.tcpSocket.open(aServer.realHostName, aServer.port, { useSSL: true });
+      socket.ondata = function (aEvent) {
+        if (typeof aEvent.data === "string") {
+          // response starts with '* OK'
+          if (aEvent.data.search(/^\* OK/i) == 0) {
+            socket.ondata = function (aEvent) {
+              if (aEvent.data.search(/1 OK/i) >= 0) {
+                socket.ondata = function (aEvent) {
+                  if (aEvent.data.search(/2 OK/i) >= 0) {
+                    socket.ondata = null;
+                    var lines = aEvent.data.split("\r\n");
+                    for (var i = 0; i < lines.length; i++) {
+                      var newFolder = {};
+                      // this is one of gmails special folders
+                      var flag =
+                        lines[i].match(/\\Inbox|\\AllMail|\\Drafts|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+                      if (flag) {
+                        var match = lines[i].match(/XLIST \([^\(]*\) "." "?([^"]*)"?/i);
+                        if (match.length > 1) {
+                          var folderName = match[1];
+                          if (flag == "\\Inbox") {
+                            folderName = "INBOX"; // TODO does case matter here?
+                          }
+                          newFolder.onlineName = folderName;
+                          newFolder.imapFolder = aServer.rootFolder.findSubFolder(folderName);
+                          newServer[flag] = newFolder;
+                        }
+                      }
+                    }
+                    if (Object.keys(newServer).length > 0) {
+                      gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
+                    }
+                    socket.close();
+                    if (typeof aCallback === "function") {
+                      aCallback.call();
+                    }
+                  }
+                };
+                socket.send("2 XLIST \"\" *\r\n");
+                return;
+              }
+              alert("closing socket2\n\n" + aEvent.data);
+              socket.close();
+            };
+            return;
+          }
         }
+        alert("closing socket1\n\n" + aEvent.data);
+        socket.close();
+      };
+      socket.onopen = function () {
+        socket.send("1 LOGIN " + aServer.realUsername + " " + aServer.password + "\r\n");
       }
     }
-    // if nothing with matching flags were found, try looking in user prefs
-    server = aFolder.server;
-    serverPrefs = Components.classes["@mozilla.org/preferences-service;1"]
-        .getService(Components.interfaces.nsIPrefService)
-        .getBranch("mail.server." + server.key + ".");
-    nsMsgFolderFlags = Components.interfaces.nsMsgFolderFlags;
-    if (aFlag == nsMsgFolderFlags.Trash && serverPrefs.prefHasUserValue("trash_folder_name")) {
-      return aFolder.rootFolder.findSubFolder(serverPrefs.getCharPref("trash_folder_name"));
-    }
-    // no matching folders were found
-    return;
   },
 
   // moves the selected message to a special folder. i.e. [Gmail]/Trash
@@ -367,7 +389,7 @@ var gmailbuttons = {
 
     server = this.GetMessageServer();
     if (this.IsServerGmailIMAP(server)) { // mesage is on Gmail imap server
-      specialFolder = this.getSpecialFolder(server.rootFolder, aFlag);
+      specialFolder = this.SpecialFolderMap[server.key][aFlag].imapFolder;
       if (specialFolder) {
         gFolderDisplay.hintAboutToDeleteMessages();
         gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages,
@@ -411,28 +433,20 @@ var gmailbuttons = {
   },
 
   FetchCustomAttribute: function (aMessage, aAttribute, aUrlListener) {
-    var
-      folder,
-      uri;
-
-    folder = aMessage.folder;
+    var folder = aMessage.folder;
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
 
-    uri = folder.fetchCustomMsgAttribute(aAttribute, aMessage.messageKey,
+    var uri = folder.fetchCustomMsgAttribute(aAttribute, aMessage.messageKey,
         msgWindow);
     uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
     uri.RegisterListener(aUrlListener);
   },
 
   IssueCommand: function (aMessage, aCommand, aExtraArgs, aUrlListener) {
-    var
-      folder,
-      uri;
-
-    folder = aMessage.folder;
+    var folder = aMessage.folder;
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
 
-    uri = folder.issueCommandOnMsgs(aCommand, aMessage.messageKey +
+    var uri = folder.issueCommandOnMsgs(aCommand, aMessage.messageKey +
       (aExtraArgs ? " " + aExtraArgs : ""), msgWindow);
     uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
     uri.RegisterListener(aUrlListener);
@@ -440,7 +454,6 @@ var gmailbuttons = {
 
   // Fetches labels for currently selected message and updates UI
   UpdateLabels : function () {
-
     try {
       /* remove existing label buttons */
       labelsElement = document.getElementById("gmailbuttons-labels");
@@ -453,6 +466,7 @@ var gmailbuttons = {
           this.extPrefs.getBoolPref("showGmailLabels")) {
         labelsRow.hidden = false;
         var message = gFolderDisplay.selectedMessage;
+        // TODO extract socket stuff to function
         if (!this.tcpSocket)
           this.tcpSocket = new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
         var socket = this.tcpSocket.open(server.realHostName, server.port, { useSSL: true });
@@ -468,6 +482,8 @@ var gmailbuttons = {
                         if (aEvent.data.search(/3 OK/i) >= 0) {
                           socket.ondata = function (aEvent) {
                             socket.ondata = null;
+                            // response lines are not always returned together, so we
+                            // skip looking for the OK and just look for the FETCH
                             var labels = aEvent.data.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
                             if (labels) {
                               if (labels.length <= 0) {
@@ -481,7 +497,7 @@ var gmailbuttons = {
                               if (specialFolder) {
                                 labels.unshift("\\" + specialFolder);
                               } else {
-                                labels.unshift(gFolderDisplay.selectedMessage.folder.onlineName);
+                                labels.unshift(folder.onlineName);
                               }
                               // remove starred since thunderbird ui already handles it in a different way
                               // TODO may want to make showing Starred optional
@@ -496,32 +512,32 @@ var gmailbuttons = {
                             labelsElement = document.getElementById("gmailbuttons-labels");
                             labelsElement.headerValue = labels;
                             socket.close();
-                          }
+                          };
                           // this is one of gmails special folders
                           var specialFolder =
                             aEvent.data.match(/\\Inbox|\\AllMail|\\Drafts|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
                           var messageId = message.messageKey + ":" + message.messageKey;
-                          socket.send("4 uid fetch " + messageId + " (X-GM-LABELS)\r\n");
+                          socket.send("4 UID FETCH " + messageId + " (X-GM-LABELS)\r\n");
                           return;
                         }
                         alert("closing socket4\n\n" + aEvent.data);
                         socket.close();
-                      }
+                      };
                       var messageId = message.messageKey + ":" + message.messageKey;
-                      socket.send("3 xlist \"\" \"" + message.folder.onlineName + "\"\r\n");
+                      socket.send("3 XLIST \"\" \"" + folder.onlineName + "\"\r\n");
                       return;
                     }
                     alert("closing socket3\n\n" + aEvent.data);
                     socket.close();
-                  }
+                  };
                   var folder = message.folder;
                   folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-                  socket.send("2 select \"" + folder.onlineName + "\"\r\n");
+                  socket.send("2 SELECT \"" + folder.onlineName + "\"\r\n");
                   return;
                 }
                 alert("closing socket2\n\n" + aEvent.data);
                 socket.close();
-              }
+              };
               return;
             }
           }
@@ -529,7 +545,7 @@ var gmailbuttons = {
           socket.close();
         };
         socket.onopen = function () {
-          socket.send("1 login " + server.realUsername + " " + server.password + "\r\n");
+          socket.send("1 LOGIN " + server.realUsername + " " + server.password + "\r\n");
         }
       } else {
         labelsRow.hidden = true;
@@ -541,16 +557,10 @@ var gmailbuttons = {
 
   // Removes the specified label from the current message
   RemoveLabel : function (aLabel) {
-    var
-      urlListener,
-      message,
-      toolbar,
-      button;
-
     try {
       // fetchCustomAttribute result is returned asyncronously so we have
       // to create a listener to handle the result.
-      urlListener = {
+      var urlListener = {
         OnStartRunningUrl: function (aUrl) {
           // don't do anything on start
         },
@@ -560,9 +570,20 @@ var gmailbuttons = {
         }
       };
 
-      message = gFolderDisplay.selectedMessage;
-      this.IssueCommand(message, "STORE", "-X-GM-LABELS " + aLabel,
-        urlListener);
+      var message = gFolderDisplay.selectedMessage;
+      var folder = message.folder;
+      folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+      var onlineName = aLabel;
+      // check for special folder
+      if (onlineName.indexOf("\\") == 0) {
+        onlineName = onlineName.substring(1);
+        onlineName = gmailbuttons.SpecialFolderMap[folder.server.key][onlineName].onlineName;
+      }
+      if (folder.onlineName == onlineName) {
+        this.IssueCommand(message, "STORE", "+FLAGS (\\Deleted)", urlListener);
+      } else {
+        this.IssueCommand(message, "STORE", "-X-GM-LABELS " + aLabel, urlListener);
+      }
     } catch (ex) {
       alert(ex);
     }
@@ -582,5 +603,4 @@ window.addEventListener("aftercustomization",
 // listen for messages loading
 gMessageListeners.push(gmailbuttons.messageListener);
 // listen for folder selection
-FolderDisplayListenerManager.
-  registerListener(gmailbuttons.folderDisplayListener);
+FolderDisplayListenerManager.registerListener(gmailbuttons.folderDisplayListener);

@@ -50,9 +50,11 @@
                   (prettyLabelName.lastIndexOf("\"") == (prettyLabelName.length - 1))) {
                 prettyLabelName = prettyLabelName.substring(1, prettyLabelName.length - 1);
               }
-              // strip leading backslashes if present (on special folders)
+              // handle special folders
               if (prettyLabelName.indexOf("\\\\") == 0) {
-                prettyLabelName = prettyLabelName.substring(2);
+                prettyLabelName = prettyLabelName.substring(1);
+                var server = gmailbuttons.GetMessageServer();
+                prettyLabelName = gmailbuttons.SpecialFolderMap[server.key][prettyLabelName].imapFolder.prettyName;
               }
 
               var label = document.createElement("label");
