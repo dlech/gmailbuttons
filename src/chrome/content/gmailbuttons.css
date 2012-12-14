@@ -1,5 +1,7 @@
 gmailbuttons-mail-headerfield-labels {
   -moz-binding: url("chrome://gmailbuttons/content/gmailbuttons.xml#gmailbuttons-mail-headerfield-labels");
+  margin-bottom: -7px; 
+  margin-top: -2px; 
 }
 
 .gmailbuttonsLabel {

@@ -23,9 +23,9 @@
         class="headerName" control="gmailbuttons-threadId" />
       <mail-headerfield id="gmailbuttons-threadId" flex="1" />
     </row>
-    <row id="gmailbuttons-labels-row">
+    <row id="gmailbuttons-labels-row"  style="margin-bottom: 3px;" >
       <label id="gmailbuttons-labels-label" value="&gmailbuttonsLabels.label;"
-        control="gmailbuttons-labels" class="headerName" style="margin-bottom: 9px" />
+        control="gmailbuttons-labels" class="headerName" />
       <gmailbuttons-mail-headerfield-labels id="gmailbuttons-labels" flex="1" />
     </row>
   </rows>
