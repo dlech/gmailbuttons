@@ -410,51 +410,6 @@ var gmailbuttons = {
     }
   },
 
-  CreateMessageLabelButton : function (aId, aLabel) {
-
-  const XUL_NS =
-      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-
-    var
-      item,
-      labelForDisplay,
-      labelLabel,
-      deleteMsgFromFolder,
-      delButton;
-
-    // create a new XUL toolbarbutton
-    item = document.createElementNS(XUL_NS, "label");
-    item.setAttribute("id", aId);
-    item.setAttribute("fetched-label", aLabel);
-    item.setAttribute("style", "-moz-appearance: tooltip;" +
-      "padding: 0px !important; margin: 0px 2px !important;");
-    labelForDisplay = aLabel;
-    // strip enclosing quotes if present
-    if ((labelForDisplay.indexOf("\"") == 0) &&
-        (labelForDisplay.lastIndexOf("\"") == (labelForDisplay.length - 1))) {
-      labelForDisplay = labelForDisplay.substring(1,
-        labelForDisplay.length - 1);
-    }
-    // strip leading backslashes if present (on special folders)
-    if (labelForDisplay.indexOf("\\\\") == 0) {
-      labelForDisplay = labelForDisplay.substring(2);
-    }
-    labelLabel = document.createElementNS(XUL_NS, "label");
-    labelLabel.setAttribute("value", labelForDisplay);
-    item.appendChild(labelLabel);
-
-    delButton = document.createElementNS(XUL_NS, "label");
-    delButton.setAttribute("style", "-moz-appearance: button;" +
-      " padding: 0px 2px !important; margin: 0px !important;");
-    delButton.setAttribute("value", "X");
-    delButton.addEventListener("click",
-      function () { gmailbuttons.RemoveLabel(aLabel) }, false);
-    //delButton.setAttribute("command", "gmailbuttons-remove-label");
-    item.appendChild(delButton);
-
-    return item;
-  },
-
   FetchCustomAttribute: function (aMessage, aAttribute, aUrlListener) {
     var
       folder,
@@ -512,33 +467,31 @@ var gmailbuttons = {
                      socket.ondata = function (aEvent) {
                         if (aEvent.data.search(/3 OK/i) >= 0) {
                           socket.ondata = function (aEvent) {
-                            var labels;
-                            if (aEvent.data.search(/4 OK/i) >= 0) {
-                              labels = aEvent.data.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
-                              if (labels) {
-                                if (labels.length <= 0) {
-                                  labels = new Array();
-                                } else {
-                                  // split on spaces that are not within quotes
-                                  // thank you http://stackoverflow.com/a/6464500
-                                  reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
-                                  labels = labels[1].split(reg);
-                                }
-                                if (specialFolder) {
-                                  labels.unshift("\\" + specialFolder);
-                                } else {
-                                  labels.unshift(gFolderDisplay.selectedMessage.folder.onlineName);
-                                }
-                                // remove starred since thunderbird ui already handles it in a different way
-                                // TODO may want to make showing Starred optional
-                                var starredPos = labels.indexOf("\"\\\\Starred\"");
-                                if (starredPos >= 0) {
-                                  labels.splice(1, starredPos);
-                                }
+                            socket.ondata = null;
+                            var labels = aEvent.data.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
+                            if (labels) {
+                              if (labels.length <= 0) {
+                                labels = new Array();
+                              } else {
+                                // split on spaces that are not within quotes
+                                // thank you http://stackoverflow.com/a/6464500
+                                reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
+                                labels = labels[1].split(reg);
+                              }
+                              if (specialFolder) {
+                                labels.unshift("\\" + specialFolder);
+                              } else {
+                                labels.unshift(gFolderDisplay.selectedMessage.folder.onlineName);
+                              }
+                              // remove starred since thunderbird ui already handles it in a different way
+                              // TODO may want to make showing Starred optional
+                              var starredPos = labels.indexOf("\"\\\\Starred\"");
+                              if (starredPos >= 0) {
+                                labels.splice(1, starredPos);
                               }
                             }
                             if (!labels) {
-                              labels = gmailbuttons.strings.getString("gmailbuttons.error");;
+                              labels = gmailbuttons.strings.getString("gmailbuttons.error");
                             }
                             labelsElement = document.getElementById("gmailbuttons-labels");
                             labelsElement.headerValue = labels;
@@ -561,7 +514,9 @@ var gmailbuttons = {
                     alert("closing socket3\n\n" + aEvent.data);
                     socket.close();
                   }
-                  socket.send("2 select \"" + message.folder.onlineName + "\"\r\n");
+                  var folder = message.folder;
+                  folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+                  socket.send("2 select \"" + folder.onlineName + "\"\r\n");
                   return;
                 }
                 alert("closing socket2\n\n" + aEvent.data);
