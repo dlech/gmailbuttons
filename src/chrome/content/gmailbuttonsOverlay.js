@@ -10,11 +10,10 @@ var gmailbuttons = {
     this.strings = document.getElementById("gmailbuttons-strings");
 
     // add support for preferences
-    this.extPrefs = Components.classes["@mozilla.org/preferences-service;1"]
-        .getService(Components.interfaces.nsIPrefService)
-        .getBranch("extensions.gmailbuttons.");
-    this.extPrefs.QueryInterface(Components.interfaces.nsIPrefBranch2);
-    this.extPrefs.addObserver("", this, false);
+    this.extPrefs = Services.prefs.getBranch("extensions.gmailbuttons.");
+    this.extPrefs.addObserver("", this, false);  
+    
+    Services.obs.addObserver(this, "network:offline-status-changed", false);
   },
 
   onUnload: function () {
@@ -23,21 +22,34 @@ var gmailbuttons = {
   },
 
   observe: function (aSubject, aTopic, aData) {
-    if (aTopic != "nsPref:changed") {
-      return; // only need to act on pref change
-    }
-    // process change
-    switch (aData) {
-    case "showDeleteButton":
-      this.updateJunkSpamButtons();
-      break;
-    case "showGmailInfo":
-      this.UpdateMessageId();
-      this.UpdateThreadId();
-      break;
-    case "showGmailLabels":
-      this.UpdateLabels();
-      break;
+    switch (aTopic) {
+      case "nsPref:changed":
+        switch (aData) {
+          case "showDeleteButton":
+            this.updateJunkSpamButtons();
+            break;
+          case "showGmailInfo":
+            this.UpdateMessageId();
+            this.UpdateThreadId();
+            break;
+          case "showGmailLabels":
+            this.UpdateLabels();
+            break;
+        }
+        break;
+      case "network:offline-status-changed":
+        if (aData == "online") {
+          for (var server in this.SpecialFolderMap) {
+            if (Object.keys(this.SpecialFolderMap[server]).length < 7) {
+              // if we got special folder info in offline mode, it will be
+              // incomplete so now that we are back online, we clear the info so
+              // that it is fetched again using XLIST instead.
+              this.SpecialFolderMap[server] = null;
+            }
+          }
+        }
+        this.UpdateLabels();
+        break;
     }
   },
 
@@ -283,12 +295,54 @@ var gmailbuttons = {
   /** Use XLIST to create map of special folders for specified server.
    * executes (optional) aCallback when finished */
   getSpecialFolders: function (aServer, aCallback) {
+
     aServer.QueryInterface(Ci.nsIMsgIncomingServer);
     if (!this.SpecialFolderMap[aServer.key]) {
       var newServer = {};
+
+      // if we are offline, we only fetch the minimum flags needed for trash
+      // and spam buttons. This will be cleared when we go back online.
+      if (Services.io.offline) {
+        const xlistTrashFlag = 0x10000;
+        const xlistSpamFlag = 0x1000;
+        var recursiveSearch = function(aFolder, aFlag) {
+          aFolder.QueryInterface(Ci.nsIMsgImapMailFolder);
+          if (aFolder.boxFlags & aFlag) {
+            return aFolder;
+          }
+          if (aFolder.hasSubFolders) {
+            var subfolders = aFolder.subFolders;
+            while (subfolders.hasMoreElements()) {
+              var subfolder = subfolders.getNext();
+              var result = recursiveSearch(subfolder, aFlag);
+              if (result) {
+                return result;
+              }
+            }
+          }
+        };
+        var trashFolder = {};
+        trashFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistTrashFlag);
+        trashFolder.onlineName = trashFolder.imapFolder.onlineName;
+        newServer["\\Trash"] = trashFolder;
+        var spmaFolder = {};
+        spmaFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistSpamFlag);
+        spmaFolder.onlineName = spmaFolder.imapFolder.onlineName;
+        newServer["\\Spam"] = spmaFolder;
+
+        gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
+        if (typeof aCallback === "function") {
+          aCallback.call();
+        }
+        return;
+      }
+
+      // If we are online, we use XLIST 
+
       // TODO extract socket stuff to function
       if (!this.tcpSocket) {
-        this.tcpSocket = new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
+        this.tcpSocket =
+          new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
       }
       var socket = this.tcpSocket.open(aServer.realHostName, aServer.port, { useSSL: true });
       socket.ondata = function (aEvent) {
@@ -398,16 +452,6 @@ var gmailbuttons = {
     }
   },
 
-  FetchCustomAttribute: function (aMessage, aAttribute, aUrlListener) {
-    var folder = aMessage.folder;
-    folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-
-    var uri = folder.fetchCustomMsgAttribute(aAttribute, aMessage.messageKey,
-        msgWindow);
-    uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
-    uri.RegisterListener(aUrlListener);
-  },
-
   IssueCommand: function (aMessage, aCommand, aExtraArgs, aUrlListener) {
     var folder = aMessage.folder;
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
@@ -427,15 +471,26 @@ var gmailbuttons = {
 
       // only show gmail labels if we are in a gmail account
       var labelsRow = document.getElementById("gmailbuttons-labels-row");
-      var server = this.GetMessageServer();
-      if (this.IsServerGmailIMAP(server) &&
-          this.extPrefs.getBoolPref("showGmailLabels")) {
+      var server = gmailbuttons.GetMessageServer();
+      if (gmailbuttons.IsServerGmailIMAP(server) &&
+          gmailbuttons.extPrefs.getBoolPref("showGmailLabels")) {
+
+        // first make sure we have special folder map
+        if (!gmailbuttons.SpecialFolderMap[server.key]) {
+          gmailbuttons.getSpecialFolders(server, gmailbuttons.UpdateLabels);
+          return;
+        }
         labelsRow.hidden = false;
+        if (Services.io.offline) {
+          labelsElement.headerValue = "not supported offline";
+          return;
+        }
         var message = gFolderDisplay.selectedMessage;
+
         // TODO extract socket stuff to function
-        if (!this.tcpSocket)
-          this.tcpSocket = new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
-        var socket = this.tcpSocket.open(server.realHostName, server.port, { useSSL: true });
+        if (!gmailbuttons.tcpSocket)
+          gmailbuttons.tcpSocket = new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
+        var socket = gmailbuttons.tcpSocket.open(server.realHostName, server.port, { useSSL: true });
         socket.ondata = function (aEvent) {
           if (typeof aEvent.data === "string") {
             // response starts with '* OK'
@@ -524,7 +579,7 @@ var gmailbuttons = {
   // Removes the specified label from the current message
   RemoveLabel : function (aLabel) {
     try {
-      // fetchCustomAttribute result is returned asyncronously so we have
+      // IssueCommand result is returned asyncronously so we have
       // to create a listener to handle the result.
       var urlListener = {
         OnStartRunningUrl: function (aUrl) {
