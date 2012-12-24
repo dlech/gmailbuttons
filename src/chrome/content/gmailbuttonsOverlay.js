@@ -69,7 +69,6 @@ var gmailbuttons = {
     if (!folder) { // message not in folder somehow?
       return;
     }
-    folder.QueryInterface(Ci.nsIMsgImapMailFolder);
     folder.QueryInterface(Ci.nsIMsgFolder);
     return folder;
   },
