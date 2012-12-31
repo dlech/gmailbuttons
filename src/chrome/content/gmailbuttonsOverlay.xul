@@ -23,6 +23,11 @@
         class="headerName" control="gmailbuttons-threadId" />
       <mail-headerfield id="gmailbuttons-threadId" flex="1" />
     </row>
+    <row id="gmailbuttons-offlineFolder-row">
+      <label id="gmailbuttons-offlineFolder-label" value="&gmailbuttonsOfflineFolder.label;"
+        class="headerName" control="gmailbuttons-offlineFolder" />
+      <mail-headerfield id="gmailbuttons-offlineFolder" flex="1" />
+    </row>
     <row id="gmailbuttons-labels-row"  style="margin-bottom: 3px;" >
       <label id="gmailbuttons-labels-label" value="&gmailbuttonsLabels.label;"
         control="gmailbuttons-labels" class="headerName" />

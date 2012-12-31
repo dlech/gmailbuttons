@@ -55,6 +55,16 @@
                 prettyLabelName = prettyLabelName.substring(1);
                 var server = gmailbuttons.GetMessageServer();
                 prettyLabelName = gmailbuttons.SpecialFolderMap[server.key][prettyLabelName].imapFolder.prettyName;
+              // label name has escaped characters
+              } else if (prettyLabelName.indexOf('&') >= 0) {
+                var server = gmailbuttons.GetMessageServer();
+                var folder = server.rootFolder.findSubFolder(prettyLabelName);
+                prettyLabelName = folder.prettyName;
+                while (folder.parent != server.rootFolder) {
+                  folder = folder.parent;
+                  folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+                  prettyLabelName = folder.prettyName + folder.hierarchyDelimiter + prettyLabelName;
+                }
               }
 
               var label = document.createElement("label");

@@ -4,5 +4,6 @@
 <!ENTITY gmailbuttonsSpamButton.tooltip "Move this message to the [Gmail]/Spam folder">
 <!ENTITY gmailbuttonsMessageId.label "Gmail Message ID">
 <!ENTITY gmailbuttonsThreadId.label "Gmail Thread ID">
+<!ENTITY gmailbuttonsOfflineFolder.label "Offline Folder">
 <!ENTITY gmailbuttonsLabels.label "Gmail Labels">
 

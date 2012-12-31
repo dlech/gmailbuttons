@@ -9,11 +9,19 @@ var gmailbuttons = {
     this.initialized = true;
     this.strings = document.getElementById("gmailbuttons-strings");
 
+    // get Thunderbird app version
+    this.appVersion = Services.appinfo.version;
+
     // add support for preferences
     this.extPrefs = Services.prefs.getBranch("extensions.gmailbuttons.");
-    this.extPrefs.addObserver("", this, false);  
-    
+    this.extPrefs.addObserver("", this, false);
+
     Services.obs.addObserver(this, "network:offline-status-changed", false);
+
+    // set preference due to bug 770778
+    if (Services.vc.compare(this.appVersion, "18.0b1") >= 0) {
+      Services.prefs.setBoolPref("dom.mozTCPSocket.enabled", true);
+    }
   },
 
   onUnload: function () {
@@ -31,6 +39,7 @@ var gmailbuttons = {
           case "showGmailInfo":
             this.UpdateMessageId();
             this.UpdateThreadId();
+            this.UpdateOfflineFolder();
             break;
           case "showGmailLabels":
             this.UpdateLabels();
@@ -272,6 +281,7 @@ var gmailbuttons = {
       gmailbuttons.UpdateLabels();
       gmailbuttons.UpdateMessageId();
       gmailbuttons.UpdateThreadId();
+      gmailbuttons.UpdateOfflineFolder();
     },
 
     onEndAttachments: function () {
@@ -336,7 +346,7 @@ var gmailbuttons = {
         return;
       }
 
-      // If we are online, we use XLIST 
+      // If we are online, we use XLIST
 
       // TODO extract socket stuff to function
       if (!this.tcpSocket) {
@@ -364,7 +374,7 @@ var gmailbuttons = {
                         if (match.length > 1) {
                           var folderName = match[1];
                           if (flag == "\\Inbox") {
-                            folderName = "INBOX"; // TODO does case matter here?
+                            folderName = "INBOX";
                           }
                           newFolder.onlineName = folderName;
                           newFolder.imapFolder = aServer.rootFolder.findSubFolder(folderName);
@@ -425,6 +435,7 @@ var gmailbuttons = {
     var messageIdValue = document.getElementById("gmailbuttons-messageId");
 
     if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
+        Services.vc.compare(this.appVersion, "17.0b1") >= 0 &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       messageIdLabel.hidden = false;
       messageIdValue.hidden = false;
@@ -441,6 +452,7 @@ var gmailbuttons = {
     var threadIdValue = document.getElementById("gmailbuttons-threadId");
 
     if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
+        Services.vc.compare(this.appVersion, "17.0b1") >= 0 &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       threadIdLabel.hidden = false;
       threadIdValue.hidden = false;
@@ -448,6 +460,24 @@ var gmailbuttons = {
     } else {
       threadIdLabel.hidden = true;
       threadIdValue.hidden = true;
+    }
+  },
+  
+  UpdateOfflineFolder: function () {
+
+    var offlineFolderLabel = document.getElementById("gmailbuttons-offlineFolder-label");
+    var offlineFolderValue = document.getElementById("gmailbuttons-offlineFolder");
+    
+    if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
+        Services.vc.compare(this.appVersion, "19.0a1") >= 0 &&
+        gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
+      offlineFolderLabel.hidden = false;
+      offlineFolderValue.hidden = false;
+      var folder = gFolderDisplay.selectedMessage.folder;
+      offlineFolderValue.headerValue =  folder.GetOfflineMsgFolder(gFolderDisplay.selectedMessage.messageKey).onlineName;
+    } else {
+      offlineFolderLabel.hidden = true;
+      offlineFolderValue.hidden = true;
     }
   },
 
