@@ -1,3 +1,16 @@
+Components.utils.import("resource://gmailbuttons/socket.jsm");
+
+function gmailbuttonsSocket() {}
+gmailbuttonsSocket.prototype = {
+  __proto__ : Socket,
+  log : function(aString) {
+    if (aString == 'onStartRequest' || aString.indexOf('onStopRequest') == 0 ||
+        aString.indexOf('onTransportStatus') == 0) {
+      return;
+    }
+    //alert(aString);
+  }
+}
 
 var gmailbuttons = {
 
@@ -17,11 +30,6 @@ var gmailbuttons = {
     this.extPrefs.addObserver("", this, false);
 
     Services.obs.addObserver(this, "network:offline-status-changed", false);
-
-    // set preference due to bug 770778
-    if (Services.vc.compare(this.appVersion, "18.0b1") >= 0) {
-      Services.prefs.setBoolPref("dom.mozTCPSocket.enabled", true);
-    }
   },
 
   onUnload: function () {
@@ -289,14 +297,14 @@ var gmailbuttons = {
     }
   },
 
-  onBeforeCustomization: function (aEvent) {
-    if (aEvent.target.id == "header-view-toolbox") {
+  onBeforeCustomization: function (aData) {
+    if (aData.target.id == "header-view-toolbox") {
       gmailbuttons.showAllButtons();
     }
   },
 
-  onAfterCustomization: function (aEvent) {
-    if (aEvent.target.id == "header-view-toolbox") {
+  onAfterCustomization: function (aData) {
+    if (aData.target.id == "header-view-toolbox") {
       gmailbuttons.updateJunkSpamButtons();
     }
   },
@@ -349,21 +357,18 @@ var gmailbuttons = {
       // If we are online, we use XLIST
 
       // TODO extract socket stuff to function
-      if (!this.tcpSocket) {
-        this.tcpSocket =
-          new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
-      }
-      var socket = this.tcpSocket.open(aServer.realHostName, aServer.port, { useSSL: true });
-      socket.ondata = function (aEvent) {
-        if (typeof aEvent.data === "string") {
+      var socket = new gmailbuttonsSocket(this);
+
+      socket.onDataReceived = function (aData) {
+        if (typeof aData === "string") {
           // response starts with '* OK'
-          if (aEvent.data.search(/^\* OK/i) == 0) {
-            socket.ondata = function (aEvent) {
-              if (aEvent.data.search(/1 OK/i) >= 0) {
-                socket.ondata = function (aEvent) {
-                  if (aEvent.data.search(/2 OK/i) >= 0) {
-                    socket.ondata = null;
-                    var lines = aEvent.data.split("\r\n");
+          if (aData.search(/^\* OK/i) == 0) {
+            socket.onDataReceived = function (aData) {
+              if (aData.search(/1 OK/i) >= 0) {
+                socket.onDataReceived = function (aData) {
+                  if (aData.search(/2 OK/i) >= 0) {
+                    socket.onDataReceived = null;
+                    var lines = aData.split("\r\n");
                     for (var i = 0; i < lines.length; i++) {
                       var newFolder = {};
                       // this is one of gmails special folders
@@ -385,32 +390,33 @@ var gmailbuttons = {
                     if (Object.keys(newServer).length > 0) {
                       gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
                     }
-                    socket.close();
+                    socket.disconnect();
                     if (typeof aCallback === "function") {
                       aCallback.call();
                     }
                   }
                 };
-                socket.send("2 XLIST \"\" *\r\n");
+                socket.sendString("2 XLIST \"\" *\r\n");
                 return;
               }
-              alert("closing socket2\n\n" + aEvent.data);
-              socket.close();
+              alert("closing socket2\n\n" + aData);
+              socket.disconnect();
             };
             return;
           }
         }
-        alert("closing socket1\n\n" + aEvent.data);
-        socket.close();
+        alert("closing socket1\n\n" + aData);
+        socket.disconnect();
       };
-      socket.onopen = function () {
-        socket.send("1 LOGIN " + aServer.realUsername + " " + aServer.password + "\r\n");
+      socket.connect(aServer.realHostName, aServer.port, ["ssl"]);debugger;
+      socket.onConnection = function () {
+        socket.sendString("1 LOGIN " + aServer.realUsername + " " + aServer.password + "\r\n");
       }
     }
   },
 
   // moves the selected message to a special folder. i.e. [Gmail]/Trash
-  MoveToSpecialFolder: function (aFlag, aEvent) {
+  MoveToSpecialFolder: function (aFlag, aData) {
 
     var
       server,
@@ -462,12 +468,12 @@ var gmailbuttons = {
       threadIdValue.hidden = true;
     }
   },
-  
+
   UpdateOfflineFolder: function () {
 
     var offlineFolderLabel = document.getElementById("gmailbuttons-offlineFolder-label");
     var offlineFolderValue = document.getElementById("gmailbuttons-offlineFolder");
-    
+
     if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
         Services.vc.compare(this.appVersion, "19.0a1") >= 0 &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
@@ -517,24 +523,23 @@ var gmailbuttons = {
         var message = gFolderDisplay.selectedMessage;
 
         // TODO extract socket stuff to function
-        if (!gmailbuttons.tcpSocket)
-          gmailbuttons.tcpSocket = new (Components.Constructor("@mozilla.org/tcp-socket;1", "nsIDOMTCPSocket"))();
-        var socket = gmailbuttons.tcpSocket.open(server.realHostName, server.port, { useSSL: true });
-        socket.ondata = function (aEvent) {
-          if (typeof aEvent.data === "string") {
+
+        var socket = new gmailbuttonsSocket();
+        socket.onDataReceived = function (aData) {
+          if (typeof aData === "string") {
             // response starts with '* OK'
-            if (aEvent.data.search(/^\* OK/i) == 0) {
-              socket.ondata = function (aEvent) {
-                if (aEvent.data.search(/1 OK/i) >= 0) {
-                  socket.ondata = function (aEvent) {
-                    if (aEvent.data.search(/2 OK/i) >= 0) {
-                     socket.ondata = function (aEvent) {
-                        if (aEvent.data.search(/3 OK/i) >= 0) {
-                          socket.ondata = function (aEvent) {
-                            socket.ondata = null;
+            if (aData.search(/^\* OK/i) == 0) {
+              socket.onDataReceived = function (aData) {
+                if (aData.search(/1 OK/i) >= 0) {
+                  socket.onDataReceived = function (aData) {
+                    if (aData.search(/2 OK/i) >= 0) {
+                     socket.onDataReceived = function (aData) {
+                        if (aData.search(/3 OK/i) >= 0) {
+                          socket.onDataReceived = function (aData) {
+                            socket.onDataReceived = null;
                             // response lines are not always returned together, so we
                             // skip looking for the OK and just look for the FETCH
-                            var labels = aEvent.data.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
+                            var labels = aData.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
                             if (labels) {
                               if (labels.length <= 0) {
                                 labels = new Array();
@@ -561,41 +566,42 @@ var gmailbuttons = {
                             }
                             labelsElement = document.getElementById("gmailbuttons-labels");
                             labelsElement.headerValue = labels;
-                            socket.close();
+                            socket.disconnect();
                           };
                           // this is one of gmails special folders
                           var specialFolder =
-                            aEvent.data.match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+                            aData.match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
                           var messageId = message.messageKey + ":" + message.messageKey;
-                          socket.send("4 UID FETCH " + messageId + " (X-GM-LABELS)\r\n");
+                          socket.sendString("4 UID FETCH " + messageId + " (X-GM-LABELS)\r\n");
                           return;
                         }
-                        alert("closing socket4\n\n" + aEvent.data);
-                        socket.close();
+                        alert("closing socket4\n\n" + aData);
+                        socket.disconnect();
                       };
                       var messageId = message.messageKey + ":" + message.messageKey;
-                      socket.send("3 XLIST \"\" \"" + folder.onlineName + "\"\r\n");
+                      socket.sendString("3 XLIST \"\" \"" + folder.onlineName + "\"\r\n");
                       return;
                     }
-                    alert("closing socket3\n\n" + aEvent.data);
-                    socket.close();
+                    alert("closing socket3\n\n" + aData);
+                    socket.disconnect();
                   };
                   var folder = message.folder;
                   folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-                  socket.send("2 SELECT \"" + folder.onlineName + "\"\r\n");
+                  socket.sendString("2 SELECT \"" + folder.onlineName + "\"\r\n");
                   return;
                 }
-                alert("closing socket2\n\n" + aEvent.data);
-                socket.close();
+                alert("closing socket2\n\n" + aData);
+                socket.disconnect();
               };
               return;
             }
           }
-          alert("closing socket1\n\n" + aEvent.data);
-          socket.close();
+          alert("closing socket1\n\n" + aData);
+          socket.disconnect();
         };
-        socket.onopen = function () {
-          socket.send("1 LOGIN " + server.realUsername + " " + server.password + "\r\n");
+        socket.connect(server.realHostName, server.port, ["ssl"]);
+        socket.onConnection = function () {
+          socket.sendString("1 LOGIN " + server.realUsername + " " + server.password + "\r\n");
         }
       } else {
         labelsRow.hidden = true;
