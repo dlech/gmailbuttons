@@ -367,7 +367,7 @@ var gmailbuttons = {
               if (aData.search(/1 OK/i) >= 0) {
                 socket.onDataReceived = function (aData) {
                   if (aData.search(/2 OK/i) >= 0) {
-                    socket.onDataReceived = null;
+                    socket.onDataReceived = function (aData) {};
                     var lines = aData.split("\r\n");
                     for (var i = 0; i < lines.length; i++) {
                       var newFolder = {};
@@ -538,7 +538,7 @@ var gmailbuttons = {
                      socket.onDataReceived = function (aData) {
                         if (aData.search(/3 OK/i) >= 0) {
                           socket.onDataReceived = function (aData) {
-                            socket.onDataReceived = null;
+                            socket.onDataReceived = function (aData) {};
                             // response lines are not always returned together, so we
                             // skip looking for the OK and just look for the FETCH
                             var labels = aData.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
