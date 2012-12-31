@@ -440,12 +440,13 @@ var gmailbuttons = {
     var messageIdLabel = document.getElementById("gmailbuttons-messageId-label");
     var messageIdValue = document.getElementById("gmailbuttons-messageId");
 
-    if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
-        Services.vc.compare(this.appVersion, "17.0b1") >= 0 &&
+    if (gmailbuttons.IsServerGmailIMAP(gmailbuttons.GetMessageServer()) &&
+        Services.vc.compare(gmailbuttons.appVersion, "17.0b1") >= 0 &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       messageIdLabel.hidden = false;
       messageIdValue.hidden = false;
-      messageIdValue.headerValue = gFolderDisplay.selectedMessage.getStringProperty("X-GM-MSGID");
+      var msgId = gFolderDisplay.selectedMessage.getStringProperty("X-GM-MSGID");
+      messageIdValue.headerValue = (msgId && msgId.length > 0) ? msgId : '???';
     } else {
       messageIdLabel.hidden = true;
       messageIdValue.hidden = true;
@@ -457,12 +458,13 @@ var gmailbuttons = {
     var threadIdLabel = document.getElementById("gmailbuttons-threadId-label");
     var threadIdValue = document.getElementById("gmailbuttons-threadId");
 
-    if (this.IsServerGmailIMAP(this.GetMessageServer()) &&
-        Services.vc.compare(this.appVersion, "17.0b1") >= 0 &&
+    if (gmailbuttons.IsServerGmailIMAP(gmailbuttons.GetMessageServer()) &&
+        Services.vc.compare(gmailbuttons.appVersion, "17.0b1") >= 0 &&
         gmailbuttons.extPrefs.getBoolPref("showGmailInfo")) {
       threadIdLabel.hidden = false;
       threadIdValue.hidden = false;
-      threadIdValue.headerValue =  gFolderDisplay.selectedMessage.getStringProperty("X-GM-THRID");
+      var theadId = gFolderDisplay.selectedMessage.getStringProperty("X-GM-THRID");
+      threadIdValue.headerValue = (theadId && theadId.length > 0) ? theadId : '???';
     } else {
       threadIdLabel.hidden = true;
       threadIdValue.hidden = true;
