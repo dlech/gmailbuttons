@@ -30,6 +30,8 @@ var gmailbuttons = {
     this.extPrefs.addObserver("", this, false);
 
     Services.obs.addObserver(this, "network:offline-status-changed", false);
+        
+    Services.obs.addObserver(gmailbuttons.CreateDbObserver, "MsgCreateDBView", false);
   },
 
   onUnload: function () {
@@ -67,6 +69,15 @@ var gmailbuttons = {
         }
         this.UpdateLabels();
         break;
+    }
+  },
+  
+  CreateDbObserver : {
+    // Components.interfaces.nsIObserver
+    observe: function(aMsgFolder, aTopic, aData)
+    {  
+       gDBView.addColumnHandler("gmailbuttons-offline-storage-column",
+          gmailbuttons.OfflineStorageLocationColumnHandler);
     }
   },
 
@@ -645,6 +656,20 @@ var gmailbuttons = {
     } catch (ex) {
       alert(ex);
     }
+  },
+  
+  OfflineStorageLocationColumnHandler : {
+    getCellText:         function(row, col) {
+       //get the message's header so that we can extract the reply to field
+       var hdr = gDBView.getMsgHdrAt(row);
+       return hdr.folder.GetOfflineMsgFolder(hdr.messageKey).onlineName;
+    },
+    getSortStringForRow: function(hdr) {return hdr.folder.GetOfflineMsgFolder(hdr.messageKey).onlineName;},
+    isString:            function() {return true;},
+    getCellProperties:   function(row, col, props){},
+    getRowProperties:    function(row, props){},
+    getImageSrc:         function(row, col) {return null;},
+    getSortLongForRow:   function(hdr) {return 0;}
   }
 };
 

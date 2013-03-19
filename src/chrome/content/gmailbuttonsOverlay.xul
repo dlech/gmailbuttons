@@ -52,4 +52,14 @@
     />
 	</toolbar>
 
+  <!--- add column for displaying offline storage location -->
+  <tree id="threadTree">
+    <treecols id="threadCols">
+    <splitter class="tree-splitter" />
+    <treecol id="gmailbuttons-offline-storage-column" persist="hidden ordinal width" 
+             currentView="unthreaded" flex="2"
+             label="Offline Storage Location" tooltiptext="Click to sort by the Offline Storage Location" />
+    </treecols>
+  </tree>
+  
 </overlay>
