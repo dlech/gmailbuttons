@@ -407,7 +407,7 @@ var gmailbuttons = {
                     }
                   }
                 };
-                socket.sendString("2 XLIST \"\" *\r\n");
+                socket.sendString('2 XLIST "" *\r\n');
                 return;
               }
               alert("closing socket2\n\n" + aData);
@@ -419,9 +419,10 @@ var gmailbuttons = {
         alert("closing socket1\n\n" + aData);
         socket.disconnect();
       };
-      socket.connect(aServer.realHostName, aServer.port, ["ssl"]);debugger;
+      socket.connect(aServer.realHostName, aServer.port, ["ssl"]);
       socket.onConnection = function () {
-        socket.sendString("1 LOGIN " + aServer.realUsername + " " + aServer.password + "\r\n");
+        socket.sendString('1 LOGIN "' + aServer.realUsername + '" "' +
+              aServer.password.replace('\\', '\\\\').replace('"', '\\"') + '"\r\n');
       }
     }
   },
@@ -569,7 +570,7 @@ var gmailbuttons = {
                               }
                               // remove starred since thunderbird ui already handles it in a different way
                               // TODO may want to make showing Starred optional
-                              var starredPos = labels.indexOf("\"\\\\Starred\"");
+                              var starredPos = labels.indexOf('"\\\\Starred"');
                               if (starredPos >= 0) {
                                 labels.splice(1, starredPos);
                               }
@@ -585,36 +586,37 @@ var gmailbuttons = {
                           var specialFolder =
                             aData.match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
                           var messageId = message.messageKey + ":" + message.messageKey;
-                          socket.sendString("4 UID FETCH " + messageId + " (X-GM-LABELS)\r\n");
+                          socket.sendString('4 UID FETCH ' + messageId + ' (X-GM-LABELS)\r\n');
                           return;
                         }
                         alert("closing socket4\n\n" + aData);
                         socket.disconnect();
                       };
                       var messageId = message.messageKey + ":" + message.messageKey;
-                      socket.sendString("3 XLIST \"\" \"" + folder.onlineName + "\"\r\n");
+                      socket.sendString('3 XLIST "" "' + folder.onlineName + '"\r\n');
                       return;
                     }
-                    alert("closing socket3\n\n" + aData);
+                    alert('closing socket3\n\n' + aData);
                     socket.disconnect();
                   };
                   var folder = message.folder;
                   folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-                  socket.sendString("2 SELECT \"" + folder.onlineName + "\"\r\n");
+                  socket.sendString('2 SELECT "' + folder.onlineName + '"\r\n');
                   return;
                 }
-                alert("closing socket2\n\n" + aData);
+                alert('closing socket2\n\n' + aData);
                 socket.disconnect();
               };
               return;
             }
           }
-          alert("closing socket1\n\n" + aData);
+          alert('closing socket1\n\n' + aData);
           socket.disconnect();
         };
         socket.connect(server.realHostName, server.port, ["ssl"]);
         socket.onConnection = function () {
-          socket.sendString("1 LOGIN " + server.realUsername + " " + server.password + "\r\n");
+          socket.sendString('1 LOGIN "' + server.realUsername + '" "' +
+              server.password.replace('\\', '\\\\').replace('"', '\\"') + '"\r\n');
         }
       } else {
         labelsRow.hidden = true;
