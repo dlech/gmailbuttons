@@ -14,6 +14,9 @@ gmailbuttonsSocket.prototype = {
 
 var gmailbuttons = {
 
+  // These flags come from the GMail IMAP API and are based on RFC 6154
+  _specialFolderRegex : /\\Inbox|\\All|\\Important|\\Drafts|\\Flagged|\\Junk|\\Sent|\\Trash/i,
+
   // used to store special folder mappings for each account
   SpecialFolderMap : {},
 
@@ -62,7 +65,7 @@ var gmailbuttons = {
             if (Object.keys(this.SpecialFolderMap[server]).length < 7) {
               // if we got special folder info in offline mode, it will be
               // incomplete so now that we are back online, we clear the info so
-              // that it is fetched again using XLIST instead.
+              // that it is fetched again using LIST instead.
               this.SpecialFolderMap[server] = null;
             }
           }
@@ -177,7 +180,7 @@ var gmailbuttons = {
       try {
         serverRootFolder = server.rootFolder;
         trashFolder = gmailbuttons.SpecialFolderMap[server.key]["\\Trash"].imapFolder;
-        spamFolder = gmailbuttons.SpecialFolderMap[server.key]["\\Spam"].imapFolder;
+        spamFolder = gmailbuttons.SpecialFolderMap[server.key]["\\Junk"].imapFolder;
         var thisFolder = gmailbuttons.GetMessageFolder();
         isTrashFolder = trashFolder.URI == thisFolder.URI;
         isSpamFolder = spamFolder.URI == thisFolder.URI;
@@ -320,7 +323,7 @@ var gmailbuttons = {
     }
   },
 
-  /** Use XLIST to create map of special folders for specified server.
+  /** Use LIST to create map of special folders for specified server.
    * executes (optional) aCallback when finished */
   getSpecialFolders: function (aServer, aCallback) {
 
@@ -356,7 +359,7 @@ var gmailbuttons = {
         var spamFolder = {};
         spamFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistSpamFlag);
         spamFolder.onlineName = spamFolder.imapFolder.onlineName;
-        newServer["\\Spam"] = spamFolder;
+        newServer["\\Junk"] = spamFolder;
 
         gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
         if (typeof aCallback === "function") {
@@ -365,7 +368,7 @@ var gmailbuttons = {
         return;
       }
 
-      // If we are online, we use XLIST
+      // If we are online, we use LIST
 
       // TODO extract socket stuff to function
       var socket = new gmailbuttonsSocket(this);
@@ -390,7 +393,10 @@ var gmailbuttons = {
       onDataReceived2 = function (aData) {
         if (aData.search(/1 OK/i) >= 0) {
           socket.onDataReceived = onDataReceived3;
-          socket.sendString('2 XLIST "" *\r\n');
+          // Add [GMail]/* special folders are at the second level. Using '%'
+          // wildcard for the first level the first level as well since I think
+          // some locations have [googlemail] possibly?
+          socket.sendString('2 LIST "" %/%\r\n');
           return;
         }
         alert("closing socket2\n\n" + aData);
@@ -403,11 +409,9 @@ var gmailbuttons = {
           var lines = aData.split("\r\n");
           for (var i = 0; i < lines.length; i++) {
             var newFolder = {};
-            // this is one of gmails special folders
-            var flag =
-              lines[i].match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+            var flag = lines[i].match(gmailbuttons._specialFolderRegex);
             if (flag) {
-              var match = lines[i].match(/XLIST \([^\(]*\) "." "?([^"]*)"?/i);
+              var match = lines[i].match(/LIST \([^\(]*\) "." "?([^"]*)"?/i);
               if (match.length > 1) {
                 var folderName = match[1];
                 if (flag == "\\Inbox") {
@@ -448,13 +452,13 @@ var gmailbuttons = {
       specialFolder;
 
     server = this.GetMessageServer();
-    if (this.IsServerGmailIMAP(server)) { // mesage is on Gmail imap server
+    if (this.IsServerGmailIMAP(server)) { // message is on Gmail imap server
       specialFolder = this.SpecialFolderMap[server.key][aFlag].imapFolder;
       if (specialFolder) {
         gFolderDisplay.hintAboutToDeleteMessages();
         gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages,
           specialFolder);
-        //return; // otherwise show error mesage below
+        //return; // otherwise show error message below
       }
     } // trash button should not be visible if not a Gmail imap message
   // TODO may want error message here
@@ -590,8 +594,8 @@ var gmailbuttons = {
 
         onDataReceived3 = function (aData) {
           if (aData.search(/2 OK/i) >= 0) {
-           socket.onDataReceived = onDataReceived4;
-            socket.sendString('3 XLIST "" "' + folder.onlineName + '"\r\n');
+            socket.onDataReceived = onDataReceived4;
+            socket.sendString('3 LIST "" "' + folder.onlineName + '"\r\n');
             return;
           }
           alert('closing socket3\n\n' + aData);
@@ -602,8 +606,7 @@ var gmailbuttons = {
           if (aData.search(/3 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived5;
             // this is one of gmails special folders
-            specialFolder =
-              aData.match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+            specialFolder = aData.match(gmailbuttons._specialFolderRegex);
             var messageId = message.messageKey + ":" + message.messageKey;
             socket.sendString('4 UID FETCH ' + messageId + ' (X-GM-LABELS)\r\n');
             return;
@@ -623,7 +626,7 @@ var gmailbuttons = {
             } else {
               // split on spaces that are not within quotes
               // thank you http://stackoverflow.com/a/6464500
-              reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
+              var reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
               labels = labels[1].split(reg);
             }
             if (specialFolder) {
@@ -631,11 +634,16 @@ var gmailbuttons = {
             } else {
               labels.unshift(folder.onlineName);
             }
-            // remove starred since thunderbird ui already handles it in a different way
-            // TODO may want to make showing Starred optional
+            // Leaving the old Starred match since X-GM-LABELS are "remembered" for old messages.
             var starredPos = labels.indexOf('"\\\\Starred"');
             if (starredPos >= 0) {
-              labels.splice(1, starredPos);
+              labels.splice(starredPos, 1);
+            }
+            // remove Flagged since thunderbird ui already handles it in a different way
+            // TODO may want to make showing Flagged optional
+            var flaggedPos = labels.indexOf('\\\\Flagged');
+            if (flaggedPos >= 0) {
+              labels.splice(flaggedPos, 1);
             }
           }
           if (!labels) {
