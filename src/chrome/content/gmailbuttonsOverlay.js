@@ -619,7 +619,7 @@ var gmailbuttons = {
           socket.onDataReceived = onDataReceived6;
           // response lines are not always returned together, so we
           // skip looking for the OK and just look for the FETCH
-          var labels = aData.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
+          var labels = aData.match(/FETCH \(X-GM-LABELS \((.*)\).*\)/i);
           if (labels) {
             if (labels.length <= 0) {
               labels = new Array();
