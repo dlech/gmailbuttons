@@ -353,10 +353,10 @@ var gmailbuttons = {
         trashFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistTrashFlag);
         trashFolder.onlineName = trashFolder.imapFolder.onlineName;
         newServer["\\Trash"] = trashFolder;
-        var spmaFolder = {};
-        spmaFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistSpamFlag);
-        spmaFolder.onlineName = spmaFolder.imapFolder.onlineName;
-        newServer["\\Spam"] = spmaFolder;
+        var spamFolder = {};
+        spamFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistSpamFlag);
+        spamFolder.onlineName = spamFolder.imapFolder.onlineName;
+        newServer["\\Spam"] = spamFolder;
 
         gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
         if (typeof aCallback === "function") {
