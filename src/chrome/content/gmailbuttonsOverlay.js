@@ -370,55 +370,68 @@ var gmailbuttons = {
       // TODO extract socket stuff to function
       var socket = new gmailbuttonsSocket(this);
 
-      socket.onDataReceived = function (aData) {
+      var onDataReceived1;
+      var onDataReceived2;
+      var onDataReceived3;
+      var onDataReceived4;
+
+      onDataReceived1 = function (aData) {
         if (typeof aData === "string") {
           // response starts with '* OK'
           if (aData.search(/^\* OK/i) == 0) {
-            socket.onDataReceived = function (aData) {
-              if (aData.search(/1 OK/i) >= 0) {
-                socket.onDataReceived = function (aData) {
-                  if (aData.search(/2 OK/i) >= 0) {
-                    socket.onDataReceived = function (aData) {};
-                    var lines = aData.split("\r\n");
-                    for (var i = 0; i < lines.length; i++) {
-                      var newFolder = {};
-                      // this is one of gmails special folders
-                      var flag =
-                        lines[i].match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
-                      if (flag) {
-                        var match = lines[i].match(/XLIST \([^\(]*\) "." "?([^"]*)"?/i);
-                        if (match.length > 1) {
-                          var folderName = match[1];
-                          if (flag == "\\Inbox") {
-                            folderName = "INBOX";
-                          }
-                          newFolder.onlineName = folderName;
-                          newFolder.imapFolder = aServer.rootFolder.findSubFolder(folderName);
-                          newServer[flag] = newFolder;
-                        }
-                      }
-                    }
-                    if (Object.keys(newServer).length > 0) {
-                      gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
-                    }
-                    socket.disconnect();
-                    if (typeof aCallback === "function") {
-                      aCallback.call();
-                    }
-                  }
-                };
-                socket.sendString('2 XLIST "" *\r\n');
-                return;
-              }
-              alert("closing socket2\n\n" + aData);
-              socket.disconnect();
-            };
+            socket.onDataReceived = onDataReceived2;
             return;
           }
         }
         alert("closing socket1\n\n" + aData);
         socket.disconnect();
       };
+
+      onDataReceived2 = function (aData) {
+        if (aData.search(/1 OK/i) >= 0) {
+          socket.onDataReceived = onDataReceived3;
+          socket.sendString('2 XLIST "" *\r\n');
+          return;
+        }
+        alert("closing socket2\n\n" + aData);
+        socket.disconnect();
+      };
+
+      onDataReceived3 = function (aData) {
+        if (aData.search(/2 OK/i) >= 0) {
+          socket.onDataReceived = onDataReceived4;
+          var lines = aData.split("\r\n");
+          for (var i = 0; i < lines.length; i++) {
+            var newFolder = {};
+            // this is one of gmails special folders
+            var flag =
+              lines[i].match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+            if (flag) {
+              var match = lines[i].match(/XLIST \([^\(]*\) "." "?([^"]*)"?/i);
+              if (match.length > 1) {
+                var folderName = match[1];
+                if (flag == "\\Inbox") {
+                  folderName = "INBOX";
+                }
+                newFolder.onlineName = folderName;
+                newFolder.imapFolder = aServer.rootFolder.findSubFolder(folderName);
+                newServer[flag] = newFolder;
+              }
+            }
+          }
+          if (Object.keys(newServer).length > 0) {
+            gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
+          }
+          socket.disconnect();
+          if (typeof aCallback === "function") {
+            aCallback.call();
+          }
+        }
+      };
+
+      onDataReceived4 = function (aData) {};
+
+      socket.onDataReceived = onDataReceived1;
       socket.connect(aServer.realHostName, aServer.port, ["ssl"]);
       socket.onConnection = function () {
         socket.sendString('1 LOGIN "' + aServer.realUsername + '" "' +
@@ -539,80 +552,101 @@ var gmailbuttons = {
         // TODO extract socket stuff to function
 
         var socket = new gmailbuttonsSocket();
-        socket.onDataReceived = function (aData) {
+
+        var onDataReceived1;
+        var onDataReceived2;
+        var onDataReceived3;
+        var onDataReceived4;
+        var onDataReceived5;
+        var onDataReceived6;
+
+        var folder, specialFolder;
+
+        onDataReceived1 = function (aData) {
           if (typeof aData === "string") {
             // response starts with '* OK'
             if (aData.search(/^\* OK/i) == 0) {
-              socket.onDataReceived = function (aData) {
-                if (aData.search(/1 OK/i) >= 0) {
-                  socket.onDataReceived = function (aData) {
-                    if (aData.search(/2 OK/i) >= 0) {
-                     socket.onDataReceived = function (aData) {
-                        if (aData.search(/3 OK/i) >= 0) {
-                          socket.onDataReceived = function (aData) {
-                            socket.onDataReceived = function (aData) {};
-                            // response lines are not always returned together, so we
-                            // skip looking for the OK and just look for the FETCH
-                            var labels = aData.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
-                            if (labels) {
-                              if (labels.length <= 0) {
-                                labels = new Array();
-                              } else {
-                                // split on spaces that are not within quotes
-                                // thank you http://stackoverflow.com/a/6464500
-                                reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
-                                labels = labels[1].split(reg);
-                              }
-                              if (specialFolder) {
-                                labels.unshift("\\" + specialFolder);
-                              } else {
-                                labels.unshift(folder.onlineName);
-                              }
-                              // remove starred since thunderbird ui already handles it in a different way
-                              // TODO may want to make showing Starred optional
-                              var starredPos = labels.indexOf('"\\\\Starred"');
-                              if (starredPos >= 0) {
-                                labels.splice(1, starredPos);
-                              }
-                            }
-                            if (!labels) {
-                              labels = gmailbuttons.strings.getString("gmailbuttons.error");
-                            }
-                            labelsElement = document.getElementById("gmailbuttons-labels");
-                            labelsElement.headerValue = labels;
-                            socket.disconnect();
-                          };
-                          // this is one of gmails special folders
-                          var specialFolder =
-                            aData.match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
-                          var messageId = message.messageKey + ":" + message.messageKey;
-                          socket.sendString('4 UID FETCH ' + messageId + ' (X-GM-LABELS)\r\n');
-                          return;
-                        }
-                        alert("closing socket4\n\n" + aData);
-                        socket.disconnect();
-                      };
-                      var messageId = message.messageKey + ":" + message.messageKey;
-                      socket.sendString('3 XLIST "" "' + folder.onlineName + '"\r\n');
-                      return;
-                    }
-                    alert('closing socket3\n\n' + aData);
-                    socket.disconnect();
-                  };
-                  var folder = message.folder;
-                  folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-                  socket.sendString('2 SELECT "' + folder.onlineName + '"\r\n');
-                  return;
-                }
-                alert('closing socket2\n\n' + aData);
-                socket.disconnect();
-              };
+              socket.onDataReceived = onDataReceived2;
               return;
             }
           }
           alert('closing socket1\n\n' + aData);
           socket.disconnect();
         };
+
+        onDataReceived2 = function (aData) {
+          if (aData.search(/1 OK/i) >= 0) {
+            socket.onDataReceived = onDataReceived3;
+            folder = message.folder;
+            folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+            socket.sendString('2 SELECT "' + folder.onlineName + '"\r\n');
+            return;
+          }
+          alert('closing socket2\n\n' + aData);
+          socket.disconnect();
+        };
+
+        onDataReceived3 = function (aData) {
+          if (aData.search(/2 OK/i) >= 0) {
+           socket.onDataReceived = onDataReceived4;
+            socket.sendString('3 XLIST "" "' + folder.onlineName + '"\r\n');
+            return;
+          }
+          alert('closing socket3\n\n' + aData);
+          socket.disconnect();
+        };
+
+        onDataReceived4 = function (aData) {
+          if (aData.search(/3 OK/i) >= 0) {
+            socket.onDataReceived = onDataReceived5;
+            // this is one of gmails special folders
+            specialFolder =
+              aData.match(/\\Inbox|\\AllMail|\\Draft|\\Sent|\\Spam|\\Starred|\\Trash|\\Important/i);
+            var messageId = message.messageKey + ":" + message.messageKey;
+            socket.sendString('4 UID FETCH ' + messageId + ' (X-GM-LABELS)\r\n');
+            return;
+          }
+          alert("closing socket4\n\n" + aData);
+          socket.disconnect();
+        };
+
+        onDataReceived5 = function (aData) {
+          socket.onDataReceived = onDataReceived6;
+          // response lines are not always returned together, so we
+          // skip looking for the OK and just look for the FETCH
+          var labels = aData.match(/FETCH \(X-GM-LABELS \(([^\)]*)\)/i);
+          if (labels) {
+            if (labels.length <= 0) {
+              labels = new Array();
+            } else {
+              // split on spaces that are not within quotes
+              // thank you http://stackoverflow.com/a/6464500
+              reg = /[ ](?=(?:[^"\\]*(?:\\.|"(?:[^"\\]*\\.)*[^"\\]*"))*[^"]*$)/g;
+              labels = labels[1].split(reg);
+            }
+            if (specialFolder) {
+              labels.unshift("\\" + specialFolder);
+            } else {
+              labels.unshift(folder.onlineName);
+            }
+            // remove starred since thunderbird ui already handles it in a different way
+            // TODO may want to make showing Starred optional
+            var starredPos = labels.indexOf('"\\\\Starred"');
+            if (starredPos >= 0) {
+              labels.splice(1, starredPos);
+            }
+          }
+          if (!labels) {
+            labels = gmailbuttons.strings.getString("gmailbuttons.error");
+          }
+          labelsElement = document.getElementById("gmailbuttons-labels");
+          labelsElement.headerValue = labels;
+          socket.disconnect();
+        };
+
+        onDataReceived6 = function (aData) {};
+
+        socket.onDataReceived = onDataReceived1;
         socket.connect(server.realHostName, server.port, ["ssl"]);
         socket.onConnection = function () {
           socket.sendString('1 LOGIN "' + server.realUsername + '" "' +
