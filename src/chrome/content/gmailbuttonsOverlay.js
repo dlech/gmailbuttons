@@ -507,7 +507,9 @@ var gmailbuttons = {
       offlineFolderLabel.hidden = false;
       offlineFolderValue.hidden = false;
       var folder = gFolderDisplay.selectedMessage.folder;
-      offlineFolderValue.headerValue =  folder.GetOfflineMsgFolder(gFolderDisplay.selectedMessage.messageKey).onlineName;
+      var messageKey = gFolderDisplay.selectedMessage.messageKey;
+      var offlineFolder = folder.GetOfflineMsgFolder(messageKey);
+      offlineFolderValue.headerValue = offlineFolder ? offlineFolder.onlineName : "???";
     } else {
       offlineFolderLabel.hidden = true;
       offlineFolderValue.hidden = true;
@@ -695,12 +697,15 @@ var gmailbuttons = {
   },
   
   OfflineStorageLocationColumnHandler : {
-    getCellText:         function(row, col) {
-       //get the message's header so that we can extract the reply to field
-       var hdr = gDBView.getMsgHdrAt(row);
-       return hdr.folder.GetOfflineMsgFolder(hdr.messageKey).onlineName;
+    getCellText : function (row, col) {
+       var hdr = gDBView.getMsgHdrAt (row);
+       var offlineFolder = hdr.folder.GetOfflineMsgFolder (hdr.messageKey);
+       return offlineFolder ? offlineFolder.onlineName : "???";
     },
-    getSortStringForRow: function(hdr) {return hdr.folder.GetOfflineMsgFolder(hdr.messageKey).onlineName;},
+    getSortStringForRow : function (hdr) {
+      var offlineFolder = hdr.folder.GetOfflineMsgFolder (hdr.messageKey);
+      return offlineFolder ? offlineFolder.onlineName : "???";
+    },
     isString:            function() {return true;},
     getCellProperties:   function(row, col, props){},
     getRowProperties:    function(row, props){},
