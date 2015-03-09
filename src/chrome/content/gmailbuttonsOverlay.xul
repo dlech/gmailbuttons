@@ -40,7 +40,6 @@
     <toolbarbutton id="gmailbuttons-spam-button" label="&gmailbuttonsSpamButton.label;"
       tooltiptext="&gmailbuttonsSpamButton.tooltip;"
 	    class="toolbarbutton-1 msgHeaderView-button hdrJunkButton"
-	    oncommand="gmailbuttons.MoveToSpecialFolder('\\Junk', event);"
 	    removable="true"
     />
     <toolbarbutton id="gmailbuttons-trash-button" label="&gmailbuttonsTrashButton.label;"

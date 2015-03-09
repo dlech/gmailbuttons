@@ -148,12 +148,8 @@ var gmailbuttons = {
       serverRootFolder,
       trashFolder,
       spamFolder,
-      trashLabel,
-      spamLabel,
       isTrashFolder,
       isSpamFolder,
-      trashTooltip,
-      spamTooltip,
       showDelete;
 
     /* get message-specific header buttons */
@@ -189,19 +185,27 @@ var gmailbuttons = {
         //alert(ex);
       }
       /* get label text */
-      trashLabel = trashFolder ? trashFolder.prettiestName :
+      var trashLabel = trashFolder ? trashFolder.prettiestName :
           gmailbuttons.strings.getString("gmailbuttons.error");
-      spamLabel = spamFolder ? spamFolder.prettiestName :
+      var spamLabel = spamFolder ? spamFolder.prettiestName :
+          gmailbuttons.strings.getString("gmailbuttons.error");
+      var notSpamLabel = spamFolder ?
+          gmailbuttons.strings.getFormattedString("gmailbuttons.notButton",
+            [ spamFolder.prettiestName ], 1) :
           gmailbuttons.strings.getString("gmailbuttons.error");
 
       /* get tooltip text */
-      trashTooltip = trashFolder ?
+      var trashTooltip = trashFolder ?
           gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
             [trashFolder.URI.replace(serverRootFolder.URI, "").substr(1)], 1) :
           gmailbuttons.strings.getString("gmailbuttons.error");
-      spamTooltip = spamFolder ?
+      var spamTooltip = spamFolder ?
           gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
             [spamFolder.URI.replace(serverRootFolder.URI, "").substr(1)], 1) :
+          gmailbuttons.strings.getString("gmailbuttons.error");
+      var notSpamTooltip = spamFolder ?
+          gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+            [ "INBOX" ], 1) :
           gmailbuttons.strings.getString("gmailbuttons.error");
 
       if (deleteButton) {
@@ -237,9 +241,18 @@ var gmailbuttons = {
         junkButton.hidden = true;
       }
       if (spamButton) {
-        spamButton.hidden = isSpamFolder;
-        spamButton.label = spamLabel;
-        spamButton.tooltipText = spamTooltip;
+        spamButton.hidden = false;
+        if (isSpamFolder) {
+          spamButton.label = notSpamLabel;
+          spamButton.tooltipText = notSpamTooltip;
+          spamButton.setAttribute ("oncommand",
+            "gmailbuttons.MoveToSpecialFolder('\\\\Inbox', event);");
+        } else {
+          spamButton.label = spamLabel;
+          spamButton.tooltipText = spamTooltip;
+          spamButton.setAttribute ("oncommand",
+            "gmailbuttons.MoveToSpecialFolder('\\\\Junk', event);");
+        }
       }
     } else {
       /* this is not a GMail account */
@@ -258,6 +271,7 @@ var gmailbuttons = {
       }
       if (spamButton) {
         spamButton.hidden = true;
+        spamButton.oncommand = function () {};
       }
     }
   },
@@ -328,12 +342,13 @@ var gmailbuttons = {
   getSpecialFolders: function (aServer, aCallback) {
 
     aServer.QueryInterface(Ci.nsIMsgIncomingServer);
-    if (!this.SpecialFolderMap[aServer.key]) {
+    if (!gmailbuttons.SpecialFolderMap[aServer.key]) {
       var newServer = {};
 
       // if we are offline, we only fetch the minimum flags needed for trash
       // and spam buttons. This will be cleared when we go back online.
       if (Services.io.offline) {
+        const xlistInbox = 0x4000;
         const xlistTrashFlag = 0x10000;
         const xlistSpamFlag = 0x1000;
         var recursiveSearch = function(aFolder, aFlag) {
@@ -352,6 +367,10 @@ var gmailbuttons = {
             }
           }
         };
+        var inboxFolder = {}
+        inboxFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistInbox);
+        inboxFolder.onlineName = inboxFolder.imapFolder.onlineName;
+        newServer["\\Inbox"] = inboxFolder;
         var trashFolder = {};
         trashFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistTrashFlag);
         trashFolder.onlineName = trashFolder.imapFolder.onlineName;
@@ -369,6 +388,14 @@ var gmailbuttons = {
       }
 
       // If we are online, we use LIST
+
+      // INBOX always exists, so don't need to use LIST for it.
+      // This saves us from having to call LIST twice
+      var inboxFolder = {}
+      inboxFolder.imapFolder = aServer.rootFolder.findSubFolder ("INBOX");
+      inboxFolder.onlineName = inboxFolder.imapFolder.onlineName;
+      newServer["\\Inbox"] = inboxFolder;
+
 
       // TODO extract socket stuff to function
       var socket = new gmailbuttonsSocket(this);
@@ -414,9 +441,6 @@ var gmailbuttons = {
               var match = lines[i].match(/LIST \([^\(]*\) "." "?([^"]*)"?/i);
               if (match.length > 1) {
                 var folderName = match[1];
-                if (flag == "\\Inbox") {
-                  folderName = "INBOX";
-                }
                 newFolder.onlineName = folderName;
                 newFolder.imapFolder = aServer.rootFolder.findSubFolder(folderName);
                 newServer[flag] = newFolder;
@@ -451,9 +475,9 @@ var gmailbuttons = {
       server,
       specialFolder;
 
-    server = this.GetMessageServer();
-    if (this.IsServerGmailIMAP(server)) { // message is on Gmail imap server
-      specialFolder = this.SpecialFolderMap[server.key][aFlag].imapFolder;
+    server = gmailbuttons.GetMessageServer();
+    if (gmailbuttons.IsServerGmailIMAP(server)) { // message is on Gmail imap server
+      specialFolder = gmailbuttons.SpecialFolderMap[server.key][aFlag].imapFolder;
       if (specialFolder) {
         gFolderDisplay.hintAboutToDeleteMessages();
         gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages,
