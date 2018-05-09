@@ -1,4 +1,4 @@
-Components.utils.import("resource://gmailbuttons/socket.jsm");
+Components.utils.import("resource://gmailbuttons/x-socket.jsm");
 
 function gmailbuttonsSocket() {}
 gmailbuttonsSocket.prototype = {

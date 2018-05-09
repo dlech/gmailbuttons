@@ -15,16 +15,16 @@ gmailbuttons-mail-headerfield-labels {
 
 .gmailbuttonsLabelDeleteButton {
   -moz-appearance: none;
-  -moz-image-region: rect(0, 64px, 16px, 48px);
+  -moz-image-region: rect(0px, 20px, 20px, 0px);
   border: none;
   padding: 0px;
-  list-style-image: url("chrome://global/skin/icons/close.png");
+  list-style-image: url("chrome://gmailbuttons/skin/icons/close.png");
 }
 
 .gmailbuttonsLabelDeleteButton:hover {
-  -moz-image-region: rect(0, 32px, 16px, 16px);
+  -moz-image-region: rect(0px, 40px, 20px, 20px);
 }
 
 .gmailbuttonsLabelDeleteButton:active {
-  -moz-image-region: rect(0, 48px, 16px, 32px);
+  -moz-image-region: rect(0px, 60px, 20px, 40px);
 }
