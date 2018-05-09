@@ -2,7 +2,6 @@
 // or via the optional chrome/content/options.xul preferences dialog.
 
 pref("extensions.gmailbuttons.showDeleteButton", false);
-pref("extensions.gmailbuttons.hideJunkStatusCol", false);
 pref("extensions.gmailbuttons.showGmailInfo", false);
 pref("extensions.gmailbuttons.showGmailLabels", true);
 // https://developer.mozilla.org/en/Localizing_extension_descriptions
