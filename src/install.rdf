@@ -4,7 +4,7 @@
     <Description about="urn:mozilla:install-manifest">
         <em:type>2</em:type> <!-- 2 : Extension -->
         <em:id>gmailbuttons@d.lech</em:id>
-        <em:version>0.8.0b1</em:version>
+        <em:version>0.8.0b2</em:version>
         <em:name>Gmail Buttons</em:name>
         <em:description>Adds message-specific buttons to Thuderbird that are consistent with the way Gmail handles Trash and Spam.</em:description>
         <em:creator>David Lechner</em:creator>
