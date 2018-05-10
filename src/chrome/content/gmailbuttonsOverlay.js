@@ -1,5 +1,8 @@
 Components.utils.import("resource://gmailbuttons/x-socket.jsm");
 
+const OAuth2Module = Components.Constructor("@mozilla.org/mail/oauth2-module;1",
+                                            "msgIOAuth2Module", "initFromMail");
+
 function gmailbuttonsSocket() {}
 gmailbuttonsSocket.prototype = {
   __proto__ : Socket,
@@ -403,6 +406,7 @@ var gmailbuttons = {
       var onDataReceived1;
       var onDataReceived2;
       var onDataReceived3;
+      var onDataReceived3x;
       var onDataReceived4;
 
       onDataReceived1 = function (aData) {
@@ -424,6 +428,12 @@ var gmailbuttons = {
           // wildcard for the first level the first level as well since I think
           // some locations have [googlemail] possibly?
           socket.sendString('2 LIST "" %/%\r\n');
+          return;
+        }
+        if (aData.search(/^\+ /i) == 0) {
+          // oauth error - have to send \r\n to get error message
+          socket.onDataReceived = onDataReceived3x;
+          socket.sendString('\r\n');
           return;
         }
         alert("closing socket2\n\n" + aData);
@@ -457,13 +467,34 @@ var gmailbuttons = {
         }
       };
 
+      onDataReceived3x = function (aData) {
+        alert("closing socket3x\n\n" + aData);
+        socket.disconnect();
+      };
+
       onDataReceived4 = function (aData) {};
 
       socket.onDataReceived = onDataReceived1;
       socket.connect(aServer.realHostName, aServer.port, ["ssl"]);
       socket.onConnection = function () {
-        socket.sendString('1 LOGIN "' + aServer.realUsername + '" "' +
+        switch (aServer.authMethod) {
+        case Ci.nsMsgAuthMethod.passwordCleartext:
+          socket.sendString('1 LOGIN "' + aServer.realUsername + '" "' +
               aServer.password.replace('\\', '\\\\').replace('"', '\\"') + '"\r\n');
+          break;
+        case Ci.nsMsgAuthMethod.OAuth2:
+          let oauth = new OAuth2Module(aServer);
+          oauth.connect(false, {
+            onSuccess(token) {
+              let sasl = oauth.buildXOAuth2String();
+              socket.sendString('1 AUTHENTICATE XOAUTH2 ' + sasl + '\r\n');
+            },
+            onFailure(msg) {
+              alert("Failed to connect via oauth: " + msg);
+            }
+          });
+          break;
+        }
       }
     }
   },
@@ -586,6 +617,7 @@ var gmailbuttons = {
         var onDataReceived1;
         var onDataReceived2;
         var onDataReceived3;
+        var onDataReceived3x;
         var onDataReceived4;
         var onDataReceived5;
         var onDataReceived6;
@@ -612,6 +644,12 @@ var gmailbuttons = {
             socket.sendString('2 SELECT "' + folder.onlineName + '"\r\n');
             return;
           }
+          if (aData.search(/^\+ /i) == 0) {
+            // oauth error - have to send \r\n to get error message
+            socket.onDataReceived = onDataReceived3x;
+            socket.sendString('\r\n');
+            return;
+          }
           alert('closing socket2\n\n' + aData);
           socket.disconnect();
         };
@@ -626,6 +664,11 @@ var gmailbuttons = {
           socket.disconnect();
         };
 
+        onDataReceived3x = function (aData) {
+          alert("closing socket3x\n\n" + aData);
+          socket.disconnect();
+        };
+  
         onDataReceived4 = function (aData) {
           if (aData.search(/3 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived5;
@@ -683,8 +726,24 @@ var gmailbuttons = {
         socket.onDataReceived = onDataReceived1;
         socket.connect(server.realHostName, server.port, ["ssl"]);
         socket.onConnection = function () {
-          socket.sendString('1 LOGIN "' + server.realUsername + '" "' +
+          switch (server.authMethod) {
+            case Ci.nsMsgAuthMethod.passwordCleartext:
+              socket.sendString('1 LOGIN "' + server.realUsername + '" "' +
               server.password.replace('\\', '\\\\').replace('"', '\\"') + '"\r\n');
+              break;
+            case Ci.nsMsgAuthMethod.OAuth2:
+              let oauth = new OAuth2Module(server);
+              oauth.connect(false, {
+                onSuccess(token) {
+                  let sasl = oauth.buildXOAuth2String();
+                  socket.sendString('1 AUTHENTICATE XOAUTH2 ' + sasl + '\r\n');
+                },
+                onFailure(msg) {
+                  alert("Failed to connect via oauth: " + msg);
+                }
+              });
+              break;
+          }
         }
       } else {
         labelsRow.hidden = true;
