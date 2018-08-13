@@ -4,7 +4,7 @@
     <Description about="urn:mozilla:install-manifest">
         <em:type>2</em:type> <!-- 2 : Extension -->
         <em:id>gmailbuttons@d.lech</em:id>
-        <em:version>0.8.0b2</em:version>
+        <em:version>0.8.0</em:version>
         <em:name>Gmail Buttons</em:name>
         <em:description>Adds message-specific buttons to Thuderbird that are consistent with the way Gmail handles Trash and Spam.</em:description>
         <em:creator>David Lechner</em:creator>
@@ -14,7 +14,7 @@
                 <!-- Thunderbird -->
                 <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
                 <em:minVersion>60.0</em:minVersion>
-                <em:maxVersion>60.*</em:maxVersion>
+                <em:maxVersion>65.*</em:maxVersion>
             </Description>
         </em:targetApplication>
         <em:optionsURL>chrome://gmailbuttons/content/gmailbuttonsOptions.xul</em:optionsURL>
