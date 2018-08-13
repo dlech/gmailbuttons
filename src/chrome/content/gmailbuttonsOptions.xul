@@ -1,7 +1,24 @@
 <?xml version="1.0" ?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet type="text/css" href="chrome://messenger/skin/preferences/preferences.css"?>
 <!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOptions.dtd">
-<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-  <setting pref="extensions.gmailbuttons.showDeleteButton" type="bool" title="&gmailbuttons.showDeleteButtonPref;" />
-  <setting pref="extensions.gmailbuttons.showGmailLabels" type="bool" title="&gmailbuttons.showGmailLabelsPref;" />
-  <setting pref="extensions.gmailbuttons.showGmailInfo" type="bool" title="&gmailbuttons.showGmailInfoPref;" />
-</vbox>
+
+<prefwindow id="stockwatcher2-prefs"
+     title="GMailButtons Options"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ 
+  <prefpane id="sw2-stock-pane" label="Stock Settings">
+    <preferences>
+      <preference id="gmailbuttons-showDeleteButton" name="extensions.gmailbuttons.showDeleteButton" type="bool" />
+      <preference id="gmailbuttons-showGmailLabels" name="extensions.gmailbuttons.showGmailLabels" type="bool"  />
+      <preference id="gmailbuttons-showGmailInfo" name="extensions.gmailbuttons.showGmailInfo" type="bool" />
+    </preferences>
+
+    <vbox align="left">
+      <checkbox preference="gmailbuttons-showDeleteButton" label="&gmailbuttons.showDeleteButtonPref;" />
+      <checkbox preference="gmailbuttons-showGmailLabels" label="&gmailbuttons.showGmailLabelsPref;" />
+      <checkbox preference="gmailbuttons-showGmailInfo" label="&gmailbuttons.showGmailInfoPref;" />
+    </vbox>
+  </prefpane>
+ 
+</prefwindow>
