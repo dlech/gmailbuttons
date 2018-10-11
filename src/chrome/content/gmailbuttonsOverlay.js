@@ -484,6 +484,11 @@ var gmailbuttons = {
           break;
         case Ci.nsMsgAuthMethod.OAuth2:
           let oauth = new OAuth2Module(aServer);
+          // https://github.com/dlech/gmailbuttons/issues/34
+          // This function is no longer available
+          if (!oauth.buildXOAuth2String) {
+            break;
+          }
           oauth.connect(false, {
             onSuccess(token) {
               let sasl = oauth.buildXOAuth2String();
@@ -733,6 +738,11 @@ var gmailbuttons = {
               break;
             case Ci.nsMsgAuthMethod.OAuth2:
               let oauth = new OAuth2Module(server);
+              // https://github.com/dlech/gmailbuttons/issues/34
+              // This function is no longer available
+              if (!oauth.buildXOAuth2String) {
+                break;
+              }
               oauth.connect(false, {
                 onSuccess(token) {
                   let sasl = oauth.buildXOAuth2String();
