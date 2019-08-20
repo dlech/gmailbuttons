@@ -1,24 +1,33 @@
 <?xml version="1.0" ?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet type="text/css" href="chrome://messenger/skin/preferences/preferences.css"?>
-<!DOCTYPE overlay SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOptions.dtd">
+<!DOCTYPE dialog SYSTEM "chrome://gmailbuttons/locale/gmailbuttonsOptions.dtd">
 
-<prefwindow id="stockwatcher2-prefs"
-     title="GMailButtons Options"
-     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
- 
-  <prefpane id="sw2-stock-pane" label="Stock Settings">
-    <preferences>
-      <preference id="gmailbuttons-showDeleteButton" name="extensions.gmailbuttons.showDeleteButton" type="bool" />
-      <preference id="gmailbuttons-showGmailLabels" name="extensions.gmailbuttons.showGmailLabels" type="bool"  />
-      <preference id="gmailbuttons-showGmailInfo" name="extensions.gmailbuttons.showGmailInfo" type="bool" />
-    </preferences>
+<dialog
+  id="gmailbuttons-prefs"
+  title="&gmailbuttons.title;"
+  buttons="accept"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-    <vbox align="left">
-      <checkbox preference="gmailbuttons-showDeleteButton" label="&gmailbuttons.showDeleteButtonPref;" />
-      <checkbox preference="gmailbuttons-showGmailLabels" label="&gmailbuttons.showGmailLabelsPref;" />
-      <checkbox preference="gmailbuttons-showGmailInfo" label="&gmailbuttons.showGmailInfoPref;" />
-    </vbox>
-  </prefpane>
- 
-</prefwindow>
+  <vbox align="left">
+    <checkbox
+      id="gmailbuttons-showDeleteButton"
+      preference="extensions.gmailbuttons.showDeleteButton"
+      label="&gmailbuttons.showDeleteButtonPref;"/>
+    <checkbox
+      id="gmailbuttons-showGmailLabels"
+      preference="extensions.gmailbuttons.showGmailLabels"
+      label="&gmailbuttons.showGmailLabelsPref;"/>
+    <checkbox
+      id="gmailbuttons-showGmailInfo"
+      preference="extensions.gmailbuttons.showGmailInfo"
+      label="&gmailbuttons.showGmailInfoPref;"/>
+  </vbox>
+
+  <script
+     src="chrome://global/content/preferencesBindings.js"
+     type="application/javascript"/>
+  <script
+     src="chrome://gmailbuttons/content/gmailbuttonsOptions.js"
+     type="application/javascript"/>
+</dialog>
