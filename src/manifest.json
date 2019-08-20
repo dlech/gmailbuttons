@@ -1,0 +1,25 @@
+{
+	"applications": {
+		"gecko": {
+			"id": "gmailbuttons@d.lech",
+			"strict_min_version": "68.0",
+			"strict_max_version": "68.*"
+		}
+	},
+	"manifest_version": 2,
+	"name": "GMail Buttons",
+	"version": "1.0.0",
+	"author": "David Lechner",
+	"homepage_url": "https://github.com/dlech/gmailbuttons",
+	"description": "Adds message-specific buttons to Thunderbird that are consistent with the way GMail handles Trash and Spam.",
+	"icons": {
+		"64": "chrome/skin/icons/logo64.png"
+	},
+	"legacy": {
+		"type": "xul",
+		"options": {
+			"page": "chrome://gmailbuttons/content/gmailbuttonsOptions.xul",
+			"open_in_tab": true
+		}
+	}
+}
