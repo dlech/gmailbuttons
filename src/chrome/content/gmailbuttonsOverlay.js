@@ -514,7 +514,7 @@ var gmailbuttons = {
       specialFolder = gmailbuttons.SpecialFolderMap[server.key][aFlag].imapFolder;
       if (specialFolder) {
         gFolderDisplay.hintAboutToDeleteMessages();
-        gDBView.doCommandWithFolder(nsMsgViewCommandType.moveMessages,
+        gDBView.doCommandWithFolder(Ci.nsMsgViewCommandType.moveMessages,
           specialFolder);
         //return; // otherwise show error message below
       }
