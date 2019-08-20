@@ -252,7 +252,7 @@ const gmailbuttons = {
       }
       if (spamButton) {
         spamButton.hidden = true;
-        spamButton.oncommand = function () {};
+        spamButton.oncommand = () => {};
       }
     }
   },
@@ -325,7 +325,7 @@ const gmailbuttons = {
         const xlistInbox = 0x4000;
         const xlistTrashFlag = 0x10000;
         const xlistSpamFlag = 0x1000;
-        const recursiveSearch = function(folder, flag) {
+        const recursiveSearch = (folder, flag) => {
           folder.QueryInterface(Ci.nsIMsgImapMailFolder);
           if (folder.boxFlags & flag) {
             return folder;
@@ -380,7 +380,7 @@ const gmailbuttons = {
       let onDataReceived3x;
       let onDataReceived4;
 
-      onDataReceived1 = function (data) {
+      onDataReceived1 = data => {
         if (typeof data === "string") {
           // response starts with '* OK'
           if (data.search(/^\* OK/i) == 0) {
@@ -392,7 +392,7 @@ const gmailbuttons = {
         socket.disconnect();
       };
 
-      onDataReceived2 = function (data) {
+      onDataReceived2 = data => {
         if (data.search(/1 OK/i) >= 0) {
           socket.onDataReceived = onDataReceived3;
           // Add [GMail]/* special folders are at the second level. Using '%'
@@ -411,7 +411,7 @@ const gmailbuttons = {
         socket.disconnect();
       };
 
-      onDataReceived3 = function (data) {
+      onDataReceived3 = data => {
         if (data.search(/2 OK/i) >= 0) {
           socket.onDataReceived = onDataReceived4;
           const lines = data.split("\r\n");
@@ -438,16 +438,16 @@ const gmailbuttons = {
         }
       };
 
-      onDataReceived3x = function (data) {
+      onDataReceived3x = data => {
         alert("closing socket3x\n\n" + data);
         socket.disconnect();
       };
 
-      onDataReceived4 = function (data) {};
+      onDataReceived4 = data => {};
 
       socket.onDataReceived = onDataReceived1;
       socket.connect(server.realHostName, server.port, ["ssl"]);
-      socket.onConnection = function () {
+      socket.onConnection = () => {
         switch (server.authMethod) {
         case Ci.nsMsgAuthMethod.passwordCleartext:
           socket.sendString('1 LOGIN "' + server.realUsername + '" "' +
@@ -590,7 +590,7 @@ const gmailbuttons = {
 
         let folder, specialFolder;
 
-        onDataReceived1 = function (data) {
+        onDataReceived1 = data => {
           if (typeof data === "string") {
             // response starts with '* OK'
             if (data.search(/^\* OK/i) == 0) {
@@ -602,7 +602,7 @@ const gmailbuttons = {
           socket.disconnect();
         };
 
-        onDataReceived2 = function (data) {
+        onDataReceived2 = data => {
           if (data.search(/1 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived3;
             folder = message.folder;
@@ -620,7 +620,7 @@ const gmailbuttons = {
           socket.disconnect();
         };
 
-        onDataReceived3 = function (data) {
+        onDataReceived3 = data => {
           if (data.search(/2 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived4;
             socket.sendString('3 LIST "" "' + folder.onlineName + '"\r\n');
@@ -630,12 +630,12 @@ const gmailbuttons = {
           socket.disconnect();
         };
 
-        onDataReceived3x = function (data) {
+        onDataReceived3x = data => {
           alert("closing socket3x\n\n" + data);
           socket.disconnect();
         };
   
-        onDataReceived4 = function (data) {
+        onDataReceived4 = data => {
           if (data.search(/3 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived5;
             // this is one of gmails special folders
@@ -648,7 +648,7 @@ const gmailbuttons = {
           socket.disconnect();
         };
 
-        onDataReceived5 = function (data) {
+        onDataReceived5 = data => {
           socket.onDataReceived = onDataReceived6;
           // response lines are not always returned together, so we
           // skip looking for the OK and just look for the FETCH
@@ -687,11 +687,11 @@ const gmailbuttons = {
           socket.disconnect();
         };
 
-        onDataReceived6 = function (data) {};
+        onDataReceived6 = data => {};
 
         socket.onDataReceived = onDataReceived1;
         socket.connect(server.realHostName, server.port, ["ssl"]);
-        socket.onConnection = function () {
+        socket.onConnection = () => {
           switch (server.authMethod) {
             case Ci.nsMsgAuthMethod.passwordCleartext:
               socket.sendString('1 LOGIN "' + server.realUsername + '" "' +
@@ -781,14 +781,14 @@ const gmailbuttons = {
 };
 
 // listen for initial window load event
-window.addEventListener("load", function () { gmailbuttons.onLoad(); }, false);
+window.addEventListener("load", () => { gmailbuttons.onLoad(); }, false);
 // listen for window unload event
-window.addEventListener("unload", function () { gmailbuttons.onUnload(); },
+window.addEventListener("unload", () => { gmailbuttons.onUnload(); },
   false);
 // listen for customization events
 window.addEventListener("beforecustomization",
-  function (e) { gmailbuttons.onBeforeCustomization(e); }, false);
+  e => { gmailbuttons.onBeforeCustomization(e); }, false);
 window.addEventListener("aftercustomization",
-  function (e) { gmailbuttons.onAfterCustomization(e); }, false);
+  e => { gmailbuttons.onAfterCustomization(e); }, false);
 // listen for messages loading
 gMessageListeners.push(gmailbuttons.messageListener);
