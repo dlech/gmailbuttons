@@ -6,11 +6,6 @@
   <!-- include required scripts -->
   <script src="gmailbuttonsOverlay.js"/>
 
-  <!-- include strings used in xul -->
-  <stringbundleset id="stringbundleset">
-    <stringbundle id="gmailbuttons-strings" src="chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties"/>
-  </stringbundleset>
-
   <!-- additional toolbar for dispaying gmail labels in message header area -->
   <rows id="expandedHeader2Rows">
     <row id="gmailbuttons-messageId-row">

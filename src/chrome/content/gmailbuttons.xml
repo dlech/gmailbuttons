@@ -78,7 +78,7 @@
               deleteButton.setAttribute('class', 'gmailbuttonsLabelDeleteButton gmailbuttonsLabel');
               deleteButton.setAttribute('style', 'padding-left: 2px;');
               deleteButton.setAttribute('labelName', labelName);
-              deleteButton.setAttribute('tooltiptext', gmailbuttons.strings.getString("gmailbuttons.removeLabel"));
+              deleteButton.setAttribute('tooltiptext', gmailbuttons.strings.GetStringFromName("gmailbuttons.removeLabel"));
               deleteButton.labelName = labelName;
               deleteButton.setAttribute('onclick', 'gmailbuttons.RemoveLabel(this.labelName)');
 

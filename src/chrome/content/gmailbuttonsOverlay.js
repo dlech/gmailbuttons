@@ -26,7 +26,7 @@ var gmailbuttons = {
   onLoad: function () {
     // initialization code
     this.initialized = true;
-    this.strings = document.getElementById("gmailbuttons-strings");
+    this.strings = Services.strings.createBundle("chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties");
 
     // get Thunderbird app version
     this.appVersion = Services.appinfo.version;
@@ -189,27 +189,27 @@ var gmailbuttons = {
       }
       /* get label text */
       var trashLabel = trashFolder ? trashFolder.prettiestName :
-          gmailbuttons.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
       var spamLabel = spamFolder ? spamFolder.prettiestName :
-          gmailbuttons.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
       var notSpamLabel = spamFolder ?
-          gmailbuttons.strings.getFormattedString("gmailbuttons.notButton",
+          gmailbuttons.strings.formatStringFromName("gmailbuttons.notButton",
             [ spamFolder.prettiestName ], 1) :
-          gmailbuttons.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
 
       /* get tooltip text */
       var trashTooltip = trashFolder ?
-          gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+          gmailbuttons.strings.formatStringFromName("gmailbuttons.moveButton.tooltip",
             [trashFolder.URI.replace(serverRootFolder.URI, "").substr(1)], 1) :
-          gmailbuttons.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
       var spamTooltip = spamFolder ?
-          gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+          gmailbuttons.strings.formatStringFromName("gmailbuttons.moveButton.tooltip",
             [spamFolder.URI.replace(serverRootFolder.URI, "").substr(1)], 1) :
-          gmailbuttons.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
       var notSpamTooltip = spamFolder ?
-          gmailbuttons.strings.getFormattedString("gmailbuttons.moveButton.tooltip",
+          gmailbuttons.strings.formatStringFromName("gmailbuttons.moveButton.tooltip",
             [ "INBOX" ], 1) :
-          gmailbuttons.strings.getString("gmailbuttons.error");
+          gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
 
       if (deleteButton) {
         // save the original tooltip - this only runs once
@@ -218,11 +218,11 @@ var gmailbuttons = {
         }
         // apply new tooltip
         if (isTrashFolder || isSpamFolder) {
-          deleteButton.tooltipText = gmailbuttons.strings.getString(
+          deleteButton.tooltipText = gmailbuttons.strings.GetStringFromName(
             "gmailbuttons.deleteButton.trashSpam.tooltip"
           );
         } else {
-          deleteButton.tooltipText = gmailbuttons.strings.getString(
+          deleteButton.tooltipText = gmailbuttons.strings.GetStringFromName(
             "gmailbuttons.deleteButton.regular.tooltip"
           );
         }
@@ -719,7 +719,7 @@ var gmailbuttons = {
             }
           }
           if (!labels) {
-            labels = gmailbuttons.strings.getString("gmailbuttons.error");
+            labels = gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
           }
           labelsElement = document.getElementById("gmailbuttons-labels");
           labelsElement.headerValue = labels;
