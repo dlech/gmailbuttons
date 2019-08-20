@@ -188,13 +188,13 @@ var gmailbuttons = {
         //alert(ex);
       }
       /* get label text */
-      var trashLabel = trashFolder ? trashFolder.prettiestName :
+      var trashLabel = trashFolder ? trashFolder.prettyName :
           gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
-      var spamLabel = spamFolder ? spamFolder.prettiestName :
+      var spamLabel = spamFolder ? spamFolder.prettyName :
           gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
       var notSpamLabel = spamFolder ?
           gmailbuttons.strings.formatStringFromName("gmailbuttons.notButton",
-            [ spamFolder.prettiestName ], 1) :
+            [ spamFolder.prettyName ], 1) :
           gmailbuttons.strings.GetStringFromName("gmailbuttons.error");
 
       /* get tooltip text */
