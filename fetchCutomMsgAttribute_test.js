@@ -1,12 +1,12 @@
 var urlListener = {
-  OnStartRunningUrl: function (aUrl) {
+  OnStartRunningUrl: function (url) {
     
   },
-  OnStopRunningUrl: function (aUrl, aExitCode) {
-    aUrl.QueryInterface(Ci.nsIImapUrl);
-    alert("Url:\n" + decodeURI(aUrl.spec) +
-    "\n\nResult: " + aUrl.customAttributeResult +
-    "\n\nExitCode:\n" + aExitCode);
+  OnStopRunningUrl: function (url, exitCode) {
+    url.QueryInterface(Ci.nsIImapUrl);
+    alert("Url:\n" + decodeURI(url.spec) +
+    "\n\nResult: " + url.customAttributeResult +
+    "\n\nExitCode:\n" + exitCode);
   },
 };
 

@@ -15,10 +15,10 @@
     <implementation>
       <property name="headerValue" onset="return this.buildLables(val);"/>
       <method name="buildLables">
-        <parameter name="aLabels"/>
+        <parameter name="labels"/>
         <body>
           <![CDATA[
-            // aLabels contains a string with a message or an array of label names
+            // labels contains a string with a message or an array of label names
 
             // remove any existing tag items we've appended to the list
             var headerValueNode =
@@ -27,21 +27,21 @@
               headerValueNode.removeChild(headerValueNode.childNodes[i]);
 
             // for strings, just display string in a label
-            if (typeof(aLabels) === "string") {
+            if (typeof(labels) === "string") {
               var label = document.createElement("label");
-              label.setAttribute('value', aLabels);
+              label.setAttribute('value', labels);
               headerValueNode.appendChild(label);
               return;
             }
             // check for array object
-            if (!Array.isArray(aLabels)) {
+            if (!Array.isArray(labels)) {
               return;
             }
             // iterate array
-            for (var index = 0; index < aLabels.length; index++)
+            for (var index = 0; index < labels.length; index++)
             {
               // for each label, create a label element and append it.
-              var labelName = aLabels[index];
+              var labelName = labels[index];
               if (!labelName)
                 continue;
               prettyLabelName = labelName;

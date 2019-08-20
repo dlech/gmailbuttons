@@ -6,12 +6,12 @@ const OAuth2Module = Components.Constructor("@mozilla.org/mail/oauth2-module;1",
 function gmailbuttonsSocket() {}
 gmailbuttonsSocket.prototype = {
   __proto__ : Socket,
-  log : function(aString) {
-    if (aString == 'onStartRequest' || aString.indexOf('onStopRequest') == 0 ||
-        aString.indexOf('onTransportStatus') == 0) {
+  log : function(string) {
+    if (string == 'onStartRequest' || string.indexOf('onStopRequest') == 0 ||
+        string.indexOf('onTransportStatus') == 0) {
       return;
     }
-    //alert(aString);
+    //alert(string);
   }
 }
 
@@ -45,10 +45,10 @@ var gmailbuttons = {
     this.extPrefs.removeObserver("", this);
   },
 
-  observe: function (aSubject, aTopic, aData) {
-    switch (aTopic) {
+  observe: function (subject, topic, data) {
+    switch (topic) {
       case "nsPref:changed":
-        switch (aData) {
+        switch (data) {
           case "showDeleteButton":
             this.updateJunkSpamButtons();
             break;
@@ -63,7 +63,7 @@ var gmailbuttons = {
         }
         break;
       case "network:offline-status-changed":
-        if (aData == "online") {
+        if (data == "online") {
           for (var server in this.SpecialFolderMap) {
             if (Object.keys(this.SpecialFolderMap[server]).length < 7) {
               // if we got special folder info in offline mode, it will be
@@ -80,7 +80,7 @@ var gmailbuttons = {
   
   CreateDbObserver : {
     // Components.interfaces.nsIObserver
-    observe: function(aMsgFolder, aTopic, aData)
+    observe: function(msgFolder, topic, data)
     {  
        gDBView.addColumnHandler("gmailbuttons-offline-storage-column",
           gmailbuttons.OfflineStorageLocationColumnHandler);
@@ -125,9 +125,9 @@ var gmailbuttons = {
   },
 
   // returns true if message is in Gmail imap
-  IsServerGmailIMAP: function (aServer) {
+  IsServerGmailIMAP: function (server) {
     // check that server parameter is valid
-    if (!(aServer instanceof Ci.nsIImapIncomingServer)) {
+    if (!(server instanceof Ci.nsIImapIncomingServer)) {
       return;
     }
     // check to see if it is imap and Gmail server
@@ -135,8 +135,8 @@ var gmailbuttons = {
     var gmailHostNames = ["imap.gmail.com", "imap.googlemail.com"];
     // built-in isGMailServer function is broken in German version
     // of Thunderbird so we check the host name as well
-    return (aServer.type == "imap" && aServer.isGMailServer) ||
-      (gmailHostNames.indexOf(aServer.hostName) >= 0);
+    return (server.type == "imap" && server.isGMailServer) ||
+      (gmailHostNames.indexOf(server.hostName) >= 0);
   },
 
   updateJunkSpamButtons: function () {
@@ -328,24 +328,24 @@ var gmailbuttons = {
     }
   },
 
-  onBeforeCustomization: function (aData) {
-    if (aData.target.id == "header-view-toolbox") {
+  onBeforeCustomization: function (data) {
+    if (data.target.id == "header-view-toolbox") {
       gmailbuttons.showAllButtons();
     }
   },
 
-  onAfterCustomization: function (aData) {
-    if (aData.target.id == "header-view-toolbox") {
+  onAfterCustomization: function (data) {
+    if (data.target.id == "header-view-toolbox") {
       gmailbuttons.updateJunkSpamButtons();
     }
   },
 
   /** Use LIST to create map of special folders for specified server.
    * executes (optional) aCallback when finished */
-  getSpecialFolders: function (aServer, aCallback) {
+  getSpecialFolders: function (server, callback) {
 
-    aServer.QueryInterface(Ci.nsIMsgIncomingServer);
-    if (!gmailbuttons.SpecialFolderMap[aServer.key]) {
+    server.QueryInterface(Ci.nsIMsgIncomingServer);
+    if (!gmailbuttons.SpecialFolderMap[server.key]) {
       var newServer = {};
 
       // if we are offline, we only fetch the minimum flags needed for trash
@@ -354,16 +354,16 @@ var gmailbuttons = {
         const xlistInbox = 0x4000;
         const xlistTrashFlag = 0x10000;
         const xlistSpamFlag = 0x1000;
-        var recursiveSearch = function(aFolder, aFlag) {
-          aFolder.QueryInterface(Ci.nsIMsgImapMailFolder);
-          if (aFolder.boxFlags & aFlag) {
-            return aFolder;
+        var recursiveSearch = function(folder, flag) {
+          folder.QueryInterface(Ci.nsIMsgImapMailFolder);
+          if (folder.boxFlags & flag) {
+            return folder;
           }
-          if (aFolder.hasSubFolders) {
-            var subfolders = aFolder.subFolders;
+          if (folder.hasSubFolders) {
+            var subfolders = folder.subFolders;
             while (subfolders.hasMoreElements()) {
               var subfolder = subfolders.getNext();
-              var result = recursiveSearch(subfolder, aFlag);
+              var result = recursiveSearch(subfolder, flag);
               if (result) {
                 return result;
               }
@@ -371,21 +371,21 @@ var gmailbuttons = {
           }
         };
         var inboxFolder = {}
-        inboxFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistInbox);
+        inboxFolder.imapFolder = recursiveSearch(server.rootFolder, xlistInbox);
         inboxFolder.onlineName = inboxFolder.imapFolder.onlineName;
         newServer["\\Inbox"] = inboxFolder;
         var trashFolder = {};
-        trashFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistTrashFlag);
+        trashFolder.imapFolder = recursiveSearch(server.rootFolder, xlistTrashFlag);
         trashFolder.onlineName = trashFolder.imapFolder.onlineName;
         newServer["\\Trash"] = trashFolder;
         var spamFolder = {};
-        spamFolder.imapFolder = recursiveSearch(aServer.rootFolder, xlistSpamFlag);
+        spamFolder.imapFolder = recursiveSearch(server.rootFolder, xlistSpamFlag);
         spamFolder.onlineName = spamFolder.imapFolder.onlineName;
         newServer["\\Junk"] = spamFolder;
 
-        gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
-        if (typeof aCallback === "function") {
-          aCallback.call();
+        gmailbuttons.SpecialFolderMap[server.key] = newServer;
+        if (typeof callback === "function") {
+          callback.call();
         }
         return;
       }
@@ -395,7 +395,7 @@ var gmailbuttons = {
       // INBOX always exists, so don't need to use LIST for it.
       // This saves us from having to call LIST twice
       var inboxFolder = {}
-      inboxFolder.imapFolder = aServer.rootFolder.findSubFolder ("INBOX");
+      inboxFolder.imapFolder = server.rootFolder.findSubFolder ("INBOX");
       inboxFolder.onlineName = inboxFolder.imapFolder.onlineName;
       newServer["\\Inbox"] = inboxFolder;
 
@@ -409,20 +409,20 @@ var gmailbuttons = {
       var onDataReceived3x;
       var onDataReceived4;
 
-      onDataReceived1 = function (aData) {
-        if (typeof aData === "string") {
+      onDataReceived1 = function (data) {
+        if (typeof data === "string") {
           // response starts with '* OK'
-          if (aData.search(/^\* OK/i) == 0) {
+          if (data.search(/^\* OK/i) == 0) {
             socket.onDataReceived = onDataReceived2;
             return;
           }
         }
-        alert("closing socket1\n\n" + aData);
+        alert("closing socket1\n\n" + data);
         socket.disconnect();
       };
 
-      onDataReceived2 = function (aData) {
-        if (aData.search(/1 OK/i) >= 0) {
+      onDataReceived2 = function (data) {
+        if (data.search(/1 OK/i) >= 0) {
           socket.onDataReceived = onDataReceived3;
           // Add [GMail]/* special folders are at the second level. Using '%'
           // wildcard for the first level the first level as well since I think
@@ -430,20 +430,20 @@ var gmailbuttons = {
           socket.sendString('2 LIST "" %/%\r\n');
           return;
         }
-        if (aData.search(/^\+ /i) == 0) {
+        if (data.search(/^\+ /i) == 0) {
           // oauth error - have to send \r\n to get error message
           socket.onDataReceived = onDataReceived3x;
           socket.sendString('\r\n');
           return;
         }
-        alert("closing socket2\n\n" + aData);
+        alert("closing socket2\n\n" + data);
         socket.disconnect();
       };
 
-      onDataReceived3 = function (aData) {
-        if (aData.search(/2 OK/i) >= 0) {
+      onDataReceived3 = function (data) {
+        if (data.search(/2 OK/i) >= 0) {
           socket.onDataReceived = onDataReceived4;
-          var lines = aData.split("\r\n");
+          var lines = data.split("\r\n");
           for (var i = 0; i < lines.length; i++) {
             var newFolder = {};
             var flag = lines[i].match(gmailbuttons._specialFolderRegex);
@@ -452,39 +452,39 @@ var gmailbuttons = {
               if (match.length > 1) {
                 var folderName = match[1];
                 newFolder.onlineName = folderName;
-                newFolder.imapFolder = aServer.rootFolder.findSubFolder(folderName);
+                newFolder.imapFolder = server.rootFolder.findSubFolder(folderName);
                 newServer[flag] = newFolder;
               }
             }
           }
           if (Object.keys(newServer).length > 0) {
-            gmailbuttons.SpecialFolderMap[aServer.key] = newServer;
+            gmailbuttons.SpecialFolderMap[server.key] = newServer;
           }
           socket.disconnect();
-          if (typeof aCallback === "function") {
-            aCallback.call();
+          if (typeof callback === "function") {
+            callback.call();
           }
         }
       };
 
-      onDataReceived3x = function (aData) {
-        alert("closing socket3x\n\n" + aData);
+      onDataReceived3x = function (data) {
+        alert("closing socket3x\n\n" + data);
         socket.disconnect();
       };
 
-      onDataReceived4 = function (aData) {};
+      onDataReceived4 = function (data) {};
 
       socket.onDataReceived = onDataReceived1;
-      socket.connect(aServer.realHostName, aServer.port, ["ssl"]);
+      socket.connect(server.realHostName, server.port, ["ssl"]);
       socket.onConnection = function () {
-        switch (aServer.authMethod) {
+        switch (server.authMethod) {
         case Ci.nsMsgAuthMethod.passwordCleartext:
-          socket.sendString('1 LOGIN "' + aServer.realUsername + '" "' +
-              aServer.password.replace('\\', '\\\\').replace('"', '\\"') + '"\r\n');
+          socket.sendString('1 LOGIN "' + server.realUsername + '" "' +
+              server.password.replace('\\', '\\\\').replace('"', '\\"') + '"\r\n');
           break;
         case Ci.nsMsgAuthMethod.OAuth2:
-          let oauth = new OAuth2Module(aServer);
-          if (!oauth.initFromMail(aServer)) {
+          let oauth = new OAuth2Module(server);
+          if (!oauth.initFromMail(server)) {
             alert("GMailButtons OAuth failed to init");
             break;
           }
@@ -503,7 +503,7 @@ var gmailbuttons = {
   },
 
   // moves the selected message to a special folder. i.e. [Gmail]/Trash
-  MoveToSpecialFolder: function (aFlag, aData) {
+  MoveToSpecialFolder: function (flag, data) {
 
     var
       server,
@@ -511,7 +511,7 @@ var gmailbuttons = {
 
     server = gmailbuttons.GetMessageServer();
     if (gmailbuttons.IsServerGmailIMAP(server)) { // message is on Gmail imap server
-      specialFolder = gmailbuttons.SpecialFolderMap[server.key][aFlag].imapFolder;
+      specialFolder = gmailbuttons.SpecialFolderMap[server.key][flag].imapFolder;
       if (specialFolder) {
         gFolderDisplay.hintAboutToDeleteMessages();
         gDBView.doCommandWithFolder(Ci.nsMsgViewCommandType.moveMessages,
@@ -578,14 +578,14 @@ var gmailbuttons = {
     }
   },
 
-  IssueCommand: function (aMessage, aCommand, aExtraArgs, aUrlListener) {
-    var folder = aMessage.folder;
+  IssueCommand: function (message, command, extraArgs, urlListener) {
+    var folder = message.folder;
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
 
-    var uri = folder.issueCommandOnMsgs(aCommand, aMessage.messageKey +
-      (aExtraArgs ? " " + aExtraArgs : ""), msgWindow);
+    var uri = folder.issueCommandOnMsgs(command, message.messageKey +
+      (extraArgs ? " " + extraArgs : ""), msgWindow);
     uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
-    uri.RegisterListener(aUrlListener);
+    uri.RegisterListener(urlListener);
   },
 
   // Fetches labels for currently selected message and updates UI
@@ -627,69 +627,69 @@ var gmailbuttons = {
 
         var folder, specialFolder;
 
-        onDataReceived1 = function (aData) {
-          if (typeof aData === "string") {
+        onDataReceived1 = function (data) {
+          if (typeof data === "string") {
             // response starts with '* OK'
-            if (aData.search(/^\* OK/i) == 0) {
+            if (data.search(/^\* OK/i) == 0) {
               socket.onDataReceived = onDataReceived2;
               return;
             }
           }
-          alert('closing socket1\n\n' + aData);
+          alert('closing socket1\n\n' + data);
           socket.disconnect();
         };
 
-        onDataReceived2 = function (aData) {
-          if (aData.search(/1 OK/i) >= 0) {
+        onDataReceived2 = function (data) {
+          if (data.search(/1 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived3;
             folder = message.folder;
             folder.QueryInterface(Ci.nsIMsgImapMailFolder);
             socket.sendString('2 SELECT "' + folder.onlineName + '"\r\n');
             return;
           }
-          if (aData.search(/^\+ /i) == 0) {
+          if (data.search(/^\+ /i) == 0) {
             // oauth error - have to send \r\n to get error message
             socket.onDataReceived = onDataReceived3x;
             socket.sendString('\r\n');
             return;
           }
-          alert('closing socket2\n\n' + aData);
+          alert('closing socket2\n\n' + data);
           socket.disconnect();
         };
 
-        onDataReceived3 = function (aData) {
-          if (aData.search(/2 OK/i) >= 0) {
+        onDataReceived3 = function (data) {
+          if (data.search(/2 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived4;
             socket.sendString('3 LIST "" "' + folder.onlineName + '"\r\n');
             return;
           }
-          alert('closing socket3\n\n' + aData);
+          alert('closing socket3\n\n' + data);
           socket.disconnect();
         };
 
-        onDataReceived3x = function (aData) {
-          alert("closing socket3x\n\n" + aData);
+        onDataReceived3x = function (data) {
+          alert("closing socket3x\n\n" + data);
           socket.disconnect();
         };
   
-        onDataReceived4 = function (aData) {
-          if (aData.search(/3 OK/i) >= 0) {
+        onDataReceived4 = function (data) {
+          if (data.search(/3 OK/i) >= 0) {
             socket.onDataReceived = onDataReceived5;
             // this is one of gmails special folders
-            specialFolder = aData.match(gmailbuttons._specialFolderRegex);
+            specialFolder = data.match(gmailbuttons._specialFolderRegex);
             var messageId = message.messageKey + ":" + message.messageKey;
             socket.sendString('4 UID FETCH ' + messageId + ' (X-GM-LABELS)\r\n');
             return;
           }
-          alert("closing socket4\n\n" + aData);
+          alert("closing socket4\n\n" + data);
           socket.disconnect();
         };
 
-        onDataReceived5 = function (aData) {
+        onDataReceived5 = function (data) {
           socket.onDataReceived = onDataReceived6;
           // response lines are not always returned together, so we
           // skip looking for the OK and just look for the FETCH
-          var labels = aData.match(/FETCH \(X-GM-LABELS \((.*)\).*\)/i);
+          var labels = data.match(/FETCH \(X-GM-LABELS \((.*)\).*\)/i);
           if (labels) {
             if (labels.length <= 0) {
               labels = new Array();
@@ -724,7 +724,7 @@ var gmailbuttons = {
           socket.disconnect();
         };
 
-        onDataReceived6 = function (aData) {};
+        onDataReceived6 = function (data) {};
 
         socket.onDataReceived = onDataReceived1;
         socket.connect(server.realHostName, server.port, ["ssl"]);
@@ -760,16 +760,16 @@ var gmailbuttons = {
   },
 
   // Removes the specified label from the current message
-  RemoveLabel : function (aLabel) {
+  RemoveLabel : function (label) {
     try {
       // IssueCommand result is returned asyncronously so we have
       // to create a listener to handle the result.
       var urlListener = {
-        OnStartRunningUrl: function (aUrl) {
+        OnStartRunningUrl: function (url) {
           // don't do anything on start
         },
 
-        OnStopRunningUrl: function (aUrl, aExitCode) {
+        OnStopRunningUrl: function (url, exitCode) {
           gmailbuttons.UpdateLabels();
         }
       };
@@ -777,7 +777,7 @@ var gmailbuttons = {
       var message = gFolderDisplay.selectedMessage;
       var folder = message.folder;
       folder.QueryInterface(Ci.nsIMsgImapMailFolder);
-      var onlineName = aLabel;
+      var onlineName = label;
       // check for special folder
       if (onlineName.indexOf("\\") == 0) {
         onlineName = onlineName.substring(1);
@@ -786,7 +786,7 @@ var gmailbuttons = {
       if (folder.onlineName == onlineName) {
         this.IssueCommand(message, "STORE", "+FLAGS (\\Deleted)", urlListener);
       } else {
-        this.IssueCommand(message, "STORE", "-X-GM-LABELS " + aLabel, urlListener);
+        this.IssueCommand(message, "STORE", "-X-GM-LABELS " + label, urlListener);
       }
     } catch (ex) {
       alert(ex);
