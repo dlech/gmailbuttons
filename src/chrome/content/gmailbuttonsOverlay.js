@@ -1,4 +1,4 @@
-Components.utils.import("resource://gmailbuttons/x-socket.jsm");
+const {Socket} = ChromeUtils.import("resource:///modules/socket.jsm");
 
 const OAuth2Module = Components.Constructor("@mozilla.org/mail/oauth2-module;1",
                                             "msgIOAuth2Module", "initFromMail");

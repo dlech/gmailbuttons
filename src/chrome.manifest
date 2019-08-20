@@ -1,5 +1,4 @@
 content   gmailbuttons                 chrome/content/
 skin      gmailbuttons   classic/1.0   chrome/skin/
 locale    gmailbuttons   en-US         chrome/locale/en-US/
-resource  gmailbuttons                 modules/
 overlay	  chrome://messenger/content/messenger.xul	chrome://gmailbuttons/content/gmailbuttonsOverlay.xul
