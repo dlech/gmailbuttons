@@ -6,7 +6,7 @@ const OAuth2Module = Components.Constructor("@mozilla.org/mail/oauth2-module;1",
 function gmailbuttonsSocket() {}
 gmailbuttonsSocket.prototype = {
   __proto__ : Socket,
-  log : function(string) {
+  log(string) {
     if (string == 'onStartRequest' || string.indexOf('onStopRequest') == 0 ||
         string.indexOf('onTransportStatus') == 0) {
       return;
@@ -23,7 +23,7 @@ var gmailbuttons = {
   // used to store special folder mappings for each account
   SpecialFolderMap : {},
 
-  onLoad: function () {
+  onLoad() {
     // initialization code
     this.initialized = true;
     this.strings = Services.strings.createBundle("chrome://gmailbuttons/locale/gmailbuttonsOverlay.properties");
@@ -40,12 +40,12 @@ var gmailbuttons = {
     Services.obs.addObserver(gmailbuttons.CreateDbObserver, "MsgCreateDBView", false);
   },
 
-  onUnload: function () {
+  onUnload() {
     // cleanup preferences
     this.extPrefs.removeObserver("", this);
   },
 
-  observe: function (subject, topic, data) {
+  observe(subject, topic, data) {
     switch (topic) {
       case "nsPref:changed":
         switch (data) {
@@ -80,14 +80,14 @@ var gmailbuttons = {
   
   CreateDbObserver : {
     // Components.interfaces.nsIObserver
-    observe: function(msgFolder, topic, data)
+    observe(msgFolder, topic, data)
     {  
        gDBView.addColumnHandler("gmailbuttons-offline-storage-column",
           gmailbuttons.OfflineStorageLocationColumnHandler);
     }
   },
 
-  GetMessageFolder: function () {
+  GetMessageFolder() {
     var
       header,
       folder;
@@ -107,7 +107,7 @@ var gmailbuttons = {
     return folder;
   },
 
-  GetMessageServer: function () {
+  GetMessageServer() {
     var
       folder,
       server;
@@ -125,7 +125,7 @@ var gmailbuttons = {
   },
 
   // returns true if message is in Gmail imap
-  IsServerGmailIMAP: function (server) {
+  IsServerGmailIMAP(server) {
     // check that server parameter is valid
     if (!(server instanceof Ci.nsIImapIncomingServer)) {
       return;
@@ -139,7 +139,7 @@ var gmailbuttons = {
       (gmailHostNames.indexOf(server.hostName) >= 0);
   },
 
-  updateJunkSpamButtons: function () {
+  updateJunkSpamButtons() {
 
     var
       deleteButton,
@@ -280,7 +280,7 @@ var gmailbuttons = {
   },
 
   // unhides all buttons - used during customization of toolbar
-  showAllButtons: function () {
+  showAllButtons() {
 
     var
       deleteButton,
@@ -311,11 +311,11 @@ var gmailbuttons = {
 
   // handle message header load events
   messageListener: {
-    onStartHeaders: function () {
+    onStartHeaders() {
       // do nothing
     },
 
-    onEndHeaders: function () {
+    onEndHeaders() {
       gmailbuttons.updateJunkSpamButtons();
       gmailbuttons.UpdateLabels();
       gmailbuttons.UpdateMessageId();
@@ -323,18 +323,18 @@ var gmailbuttons = {
       gmailbuttons.UpdateOfflineFolder();
     },
 
-    onEndAttachments: function () {
+    onEndAttachments() {
       // do nothing
     }
   },
 
-  onBeforeCustomization: function (data) {
+  onBeforeCustomization(data) {
     if (data.target.id == "header-view-toolbox") {
       gmailbuttons.showAllButtons();
     }
   },
 
-  onAfterCustomization: function (data) {
+  onAfterCustomization(data) {
     if (data.target.id == "header-view-toolbox") {
       gmailbuttons.updateJunkSpamButtons();
     }
@@ -342,7 +342,7 @@ var gmailbuttons = {
 
   /** Use LIST to create map of special folders for specified server.
    * executes (optional) aCallback when finished */
-  getSpecialFolders: function (server, callback) {
+  getSpecialFolders(server, callback) {
 
     server.QueryInterface(Ci.nsIMsgIncomingServer);
     if (!gmailbuttons.SpecialFolderMap[server.key]) {
@@ -503,7 +503,7 @@ var gmailbuttons = {
   },
 
   // moves the selected message to a special folder. i.e. [Gmail]/Trash
-  MoveToSpecialFolder: function (flag, data) {
+  MoveToSpecialFolder(flag, data) {
 
     var
       server,
@@ -522,7 +522,7 @@ var gmailbuttons = {
   // TODO may want error message here
   },
 
-  UpdateMessageId: function () {
+  UpdateMessageId() {
 
     var messageIdLabel = document.getElementById("gmailbuttons-messageId-label");
     var messageIdValue = document.getElementById("gmailbuttons-messageId");
@@ -540,7 +540,7 @@ var gmailbuttons = {
     }
   },
 
-  UpdateThreadId: function () {
+  UpdateThreadId() {
 
     var threadIdLabel = document.getElementById("gmailbuttons-threadId-label");
     var threadIdValue = document.getElementById("gmailbuttons-threadId");
@@ -558,7 +558,7 @@ var gmailbuttons = {
     }
   },
 
-  UpdateOfflineFolder: function () {
+  UpdateOfflineFolder() {
 
     var offlineFolderLabel = document.getElementById("gmailbuttons-offlineFolder-label");
     var offlineFolderValue = document.getElementById("gmailbuttons-offlineFolder");
@@ -578,7 +578,7 @@ var gmailbuttons = {
     }
   },
 
-  IssueCommand: function (message, command, extraArgs, urlListener) {
+  IssueCommand(message, command, extraArgs, urlListener) {
     var folder = message.folder;
     folder.QueryInterface(Ci.nsIMsgImapMailFolder);
 
@@ -589,7 +589,7 @@ var gmailbuttons = {
   },
 
   // Fetches labels for currently selected message and updates UI
-  UpdateLabels : function () {
+  UpdateLabels() {
     try {
       /* remove existing label buttons */
       labelsElement = document.getElementById("gmailbuttons-labels");
@@ -760,16 +760,16 @@ var gmailbuttons = {
   },
 
   // Removes the specified label from the current message
-  RemoveLabel : function (label) {
+  RemoveLabel(label) {
     try {
       // IssueCommand result is returned asyncronously so we have
       // to create a listener to handle the result.
       var urlListener = {
-        OnStartRunningUrl: function (url) {
+        OnStartRunningUrl(url) {
           // don't do anything on start
         },
 
-        OnStopRunningUrl: function (url, exitCode) {
+        OnStopRunningUrl(url, exitCode) {
           gmailbuttons.UpdateLabels();
         }
       };
@@ -794,20 +794,26 @@ var gmailbuttons = {
   },
   
   OfflineStorageLocationColumnHandler : {
-    getCellText : function (row, col) {
+    getCellText(row, col) {
        var hdr = gDBView.getMsgHdrAt (row);
        var offlineFolder = hdr.folder.GetOfflineMsgFolder (hdr.messageKey);
        return offlineFolder ? offlineFolder.onlineName : "???";
     },
-    getSortStringForRow : function (hdr) {
+    getSortStringForRow(hdr) {
       var offlineFolder = hdr.folder.GetOfflineMsgFolder (hdr.messageKey);
       return offlineFolder ? offlineFolder.onlineName : "???";
     },
-    isString:            function() {return true;},
-    getCellProperties:   function(row, col, props){},
-    getRowProperties:    function(row, props){},
-    getImageSrc:         function(row, col) {return null;},
-    getSortLongForRow:   function(hdr) {return 0;}
+    isString() {
+      return true;
+    },
+    getCellProperties(row, col, props) {},
+    getRowProperties(row, props) {},
+    getImageSrc(row, col) {
+      return null;
+    },
+    getSortLongForRow(hdr) {
+      return 0;
+    }
   }
 };
 

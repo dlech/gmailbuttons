@@ -1,8 +1,8 @@
 var urlListener = {
-  OnStartRunningUrl: function (url) {
+  OnStartRunningUrl(url) {
     
   },
-  OnStopRunningUrl: function (url, exitCode) {
+  OnStopRunningUrl(url, exitCode) {
     url.QueryInterface(Ci.nsIImapUrl);
     alert("Url:\n" + decodeURI(url.spec) +
     "\n\nResult: " + url.customAttributeResult +
