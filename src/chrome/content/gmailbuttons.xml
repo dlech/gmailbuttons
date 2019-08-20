@@ -21,14 +21,14 @@
             // labels contains a string with a message or an array of label names
 
             // remove any existing tag items we've appended to the list
-            var headerValueNode =
+            const headerValueNode =
                 document.getAnonymousElementByAttribute(this, 'anonid', 'headerValue');
-            for (var i = headerValueNode.childNodes.length - 1; i >= 0; --i)
+            for (let i = headerValueNode.childNodes.length - 1; i >= 0; --i)
               headerValueNode.removeChild(headerValueNode.childNodes[i]);
 
             // for strings, just display string in a label
             if (typeof(labels) === "string") {
-              var label = document.createElement("label");
+              const label = document.createElement("label");
               label.setAttribute('value', labels);
               headerValueNode.appendChild(label);
               return;
@@ -38,10 +38,10 @@
               return;
             }
             // iterate array
-            for (var index = 0; index < labels.length; index++)
+            for (let index = 0; index < labels.length; index++)
             {
               // for each label, create a label element and append it.
-              var labelName = labels[index];
+              const labelName = labels[index];
               if (!labelName)
                 continue;
               prettyLabelName = labelName;
@@ -53,15 +53,15 @@
               // handle special folders
               if (prettyLabelName.indexOf("\\\\") == 0) {
                 prettyLabelName = prettyLabelName.substring(1);
-                var server = gmailbuttons.GetMessageServer();
+                const server = gmailbuttons.GetMessageServer();
                 // TODO what do we do if user is not subscribed to special folder?
                 if (gmailbuttons.SpecialFolderMap[server.key][prettyLabelName]) {
                   prettyLabelName = gmailbuttons.SpecialFolderMap[server.key][prettyLabelName].imapFolder.prettyName;
                 }
               // label name has escaped characters
               } else if (prettyLabelName.indexOf('&') >= 0) {
-                var server = gmailbuttons.GetMessageServer();
-                var folder = server.rootFolder.findSubFolder(prettyLabelName);
+                const server = gmailbuttons.GetMessageServer();
+                const folder = server.rootFolder.findSubFolder(prettyLabelName);
                 prettyLabelName = folder.prettyName;
                 while (folder.parent != server.rootFolder) {
                   folder = folder.parent;
@@ -70,11 +70,11 @@
                 }
               }
 
-              var label = document.createElement("label");
+              const label = document.createElement("label");
               label.setAttribute('value', prettyLabelName);
               label.setAttribute('class', 'gmailbuttonsLabel');
 
-              var deleteButton = document.createElement("toolbarbutton");
+              const deleteButton = document.createElement("toolbarbutton");
               deleteButton.setAttribute('class', 'gmailbuttonsLabelDeleteButton gmailbuttonsLabel');
               deleteButton.setAttribute('style', 'padding-left: 2px;');
               deleteButton.setAttribute('labelName', labelName);
@@ -82,7 +82,7 @@
               deleteButton.labelName = labelName;
               deleteButton.setAttribute('onclick', 'gmailbuttons.RemoveLabel(this.labelName)');
 
-              var labelBox = document.createElement("hbox");
+              const labelBox = document.createElement("hbox");
               labelBox.setAttribute('class', 'tagvalue gmailbuttonsTagvalue');
               labelBox.appendChild(label);
               labelBox.appendChild(deleteButton);

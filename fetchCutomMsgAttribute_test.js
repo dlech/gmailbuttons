@@ -1,4 +1,4 @@
-var urlListener = {
+const urlListener = {
   OnStartRunningUrl(url) {
     
   },
@@ -10,14 +10,14 @@ var urlListener = {
   },
 };
 
-var message = gFolderDisplay.selectedMessage;
+const message = gFolderDisplay.selectedMessage;
 if (!message) {
   alert("Select a message and run again.");
 }
-var folder = message.folder;
+const folder = message.folder;
 folder.QueryInterface(Ci.nsIMsgImapMailFolder);
 attribute = "X-GM-LABELS";
 msgIdList = message.messageKey;
-var uri = folder.fetchCustomMsgAttribute(attribute, msgIdList, msgWindow);
+const uri = folder.fetchCustomMsgAttribute(attribute, msgIdList, msgWindow);
 uri.QueryInterface(Ci.nsIMsgMailNewsUrl);
 uri.RegisterListener(urlListener);
